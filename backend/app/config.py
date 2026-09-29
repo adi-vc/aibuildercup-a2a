@@ -21,12 +21,26 @@ class Settings(BaseSettings):
     # docker-compose sets this to http://gcs-emulator:4443.
     gcs_emulator_host: str = ""
 
+    # ── Gemini ───────────────────────────────────────────────────────────────────
+    # Set GEMINI_API_KEY for local dev using the Gemini Developer API.
+    # In production on Cloud Run, leave this empty and use ADC (Vertex AI).
+    gemini_api_key: str = ""
+
+    # Model names — pulled from models.yaml at runtime but can be overridden here.
+    # Keeping them in Settings means tests can swap them without touching the file.
+    extraction_model: str = "gemini-2.0-flash-001"
+
+    # ── Firestore ────────────────────────────────────────────────────────────────
+    # Set FIRESTORE_EMULATOR_HOST to use the local emulator (e.g. localhost:8088).
+    # docker compose will add the emulator in a future update.
+    firestore_emulator_host: str = ""
+
     # ── Runtime environment ──────────────────────────────────────────────────────
     env: str = "local"          # local | staging | production
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     # ── App ──────────────────────────────────────────────────────────────────────
-    app_version: str = "0.1.0-p0"
+    app_version: str = "0.1.0-p1"
 
 
 settings = Settings()
