@@ -14,7 +14,7 @@
 | | |
 |---|---|
 | **What it is** | A runtime, not a renderer. Media is generated once, persona-neutral; the video is composed in the browser per viewer. |
-| **Hero use case** | A product page becomes an interactive ad. Education, comic and news ship as recorded 20-second proofs of the same engine. |
+| **Hero use case** | A product page becomes an interactive ad — the one killer demo. An **optional second ad product** (panels-only) is a brief live swap that doubles the revenue angle and hedges stage-smoothness (D13, §65); education, comic and news ship as recorded 20-second proofs of the same engine. |
 | **The mechanism** | **The claim guard.** Every beat and answer is drawn from a flat fact row carrying a string-verified source span; anything unsupported is refused on screen. No knowledge graph, no temporal layer — see D11 and §24.1. |
 | **Three claims** | Generated once, composed per viewer · True when you press play · Cannot over-claim, and proves what it showed. |
 | **The moment** | A viewer asks "Is it the fastest in India?" and the character declines, offering the verified figure instead. |
@@ -71,6 +71,7 @@ Once the video differs per viewer, that question becomes both unanswerable and l
 | D10 | Naming | **Rename from "A2A"** | Collides with the agent-to-agent protocol |
 | D11 | Brain shape | **Flat fact rows, no typed edges, no temporal layer** | Every consumer reads by `subject` or `fact_id`; nothing traverses. Freshness is bindings (F8), not fact validity. One extraction failure mode instead of six (§24.1) |
 | D12 | Models | **Google-native across the board** | Gemini for language, Veo for motion, Imagen/Gemini Image for stills, Chirp for voice, Lyria for score — one auth path, one quota console, one bill, no third-party key to rotate (§32.1) |
+| D13 | Second live demo | **A second ad product, panels-only — optional** | One killer demo (the Vega V1 hero) is the target; a second ad *product* (not a second vertical) doubles the revenue angle and hedges "which renders smoothest," at ~0 engine cost — it reuses the runtime, guard and embed and is only a P4-Vault + §17-fixture increment. Built after the hero is smooth, first to drop if the clock slips (§65). Cross-industry range stays with the recorded proofs (D2). Rationale in `AGENTS.md` §4 |
 
 ## 4. Explicit non-goals
 
@@ -953,6 +954,8 @@ Linter passes · kids-mode manifest has zero non-sponsor slots · refusal suite 
 
 `◐` = partially delivered in that phase, completed later.
 
+**Optional second ad product (D13) — not a phase, a post-hero increment.** Once P0–P7.5 land and the hero's dry runs are green, product B is a **P4-Vault + §17-fixture build only**, with no new engine code — it reuses the P5 runtime, P7 guard and embed. It sits *inside* the cut line (§65): built last, dropped first.
+
 ---
 
 ### 64.2 P0 — Walking skeleton
@@ -1180,7 +1183,7 @@ Linter passes · kids-mode manifest has zero non-sponsor slots · refusal suite 
 
 Keep **P0–P7.5** (through the play-log — it is priority M and it is slide 12), **F26 the embed**, and metrics 1–3 — these are the validated capabilities and the two pure bets, and the pitch collapses without them.
 
-Drop in this order: news adapter → accessibility track → **the Veo hero shot** → comic adapter → transition clips beyond the first two. *Insights and the dashboard are already roadmap-only (§16), so there is nothing to cut there.*
+The **optional second ad product (D13)** is the first thing to *add* when P0–P7.5 land early with time to spare, and the first to *drop* if they don't. Drop in this order: second ad product → news adapter → accessibility track → **the Veo hero shot** → comic adapter → transition clips beyond the first two. *Insights and the dashboard are already roadmap-only (§16), so there is nothing to cut there.*
 
 ## 66. The seam between two builders
 
@@ -1285,6 +1288,8 @@ Rehearse 6, 7 and 8 as one continuous take — they are the three moments that c
 | 7 city + language swap | 10 | 14 s |
 | 8 embed paste | 11 | 10 s |
 | | **total** | **75 s** |
+
+**Optional product-B swap (D13).** Only if the hero is locked and dry runs are green: add a +5–8 s beat after step 7 — "same engine, a completely different product" — showing product B compose from the same runtime with zero generation calls. Keep the run inside budget by trimming the recorded-proof montage (§69 slide 13), never the hero's mechanism beats (steps 6–8).
 
 ## 71. Slide system and capture spec
 

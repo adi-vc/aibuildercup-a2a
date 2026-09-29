@@ -1,14 +1,16 @@
 # Vachan vs A2A: plan comparison
 
-*As of 2026-09-28*
+*As of 2026-09-29*
 
-Vachan and A2A are not two competing ideas: they describe the same engine, and Vachan ([`vachan-plan.md`](../vachan-plan.md)) is the later, narrower revision of what the [README](../README.md) and `docs/` call A2A. The engine stays the same; scope, the pitch headline and the build order change.
+Vachan and A2A are not two competing ideas: they describe the same engine, and Vachan ([`vachan-plan.md`](vachan-plan.md)) is the later, narrower revision of what the [README](README.md) and `docs_a2a/` call A2A. The engine stays the same; scope, the pitch headline and the build order change.
+
+**Decision (settled):** build **Vachan**, pitch **A2A**. Vachan is what this repo implements; the A2A docs in `docs_a2a/` are the roadmap/vision and deep reference. Rationale and working rules are in [`AGENTS.md`](AGENTS.md).
 
 ## At a glance
 
-| | A2A (README + `docs/`) | Vachan (`vachan-plan.md`) |
+| | A2A (README + `docs_a2a/`) | Vachan (`vachan-plan.md`) |
 | --- | --- | --- |
-| Scope | Four live verticals as configs of one engine: Comic, Ads, Education, News | Ads is the only live demo; Education, Comic and News become 20-second recorded proofs |
+| Scope | Four live verticals as configs of one engine: Comic, Ads, Education, News | One hero ad demo (+ an optional second ad product, D13); Education, Comic and News become 20-second recorded proofs |
 | Headline | A grounded knowledge graph with provenance on every node | The claim guard: the video refuses unsupported claims on screen |
 | Brain | Knowledge graph with typed edges, plus `valid_until` expiry on facts | Flat fact rows only (entity, fact, span); no edges, no time-validity layer |
 | Changing values (price, stock) | Facts that expire | Bindings looked up at play time: live value, then cached value, then published fact, then neutral wording |
@@ -29,7 +31,7 @@ Vachan and A2A are not two competing ideas: they describe the same engine, and V
 - The stack: Python, FastAPI and LangGraph on Cloud Run; Gemini, Veo, Imagen and Chirp TTS on Vertex AI; Firestore and GCS; React, Vite and Remotion on Firebase Hosting.
 - Human approval gates between pipeline stages (Vachan trims them to three one-click gates).
 
-[`TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) stays useful as deep reference for these parts. Skip its typed edges, `valid_until`, News `hub_spoke` and four-vertical config registry until after the demo.
+[`TECHNICAL_DESIGN.md`](docs_a2a/TECHNICAL_DESIGN.md) stays useful as deep reference for these parts. Skip its typed edges, `valid_until`, News `hub_spoke` and four-vertical config registry until after the demo.
 
 ## Where to start building
 
