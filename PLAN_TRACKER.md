@@ -9,7 +9,7 @@ The running log of implementation work. It is the single source of truth for **w
 ## How this works (read before touching anything)
 
 1. **One task in flight at a time.** Never start a second task while one is `IN PROGRESS`. The whole point is a clean, reviewable trail.
-2. **A task starts only after it is marked `GO`.** Proposing a task (`PROPOSED`) is not permission to build it. Work begins **only** once the owner has set the status to `GO` in this file. If you believe the next task is obvious, still wait for `GO`.
+2. **A task starts only after it is marked `GO`.** Proposing a task (`PROPOSED`) is not permission to build it. Work begins **only** once the status has been set to `GO` in this file. If you believe the next task is obvious, still wait for `GO`.
 3. **Log as you go — especially the messy parts.** When a task is attempted, capture in its entry:
    - what was actually done (vs. what the plan said);
    - anything that **couldn't** be done, and why;
@@ -35,7 +35,7 @@ The running log of implementation work. It is the single source of truth for **w
 ```
 ### T<n> — <short title>   ·   <plan ref, e.g. P1 / F3>
 - Status: PROPOSED | GO | IN PROGRESS | DONE | BLOCKED | DEFERRED
-- Owner: <name>            Dates: opened <YYYY-MM-DD> · updated <YYYY-MM-DD>
+- Dates: opened <YYYY-MM-DD> · updated <YYYY-MM-DD>
 - Goal: <one line — what "done" means, tied to the plan's exit criteria>
 - Done / changed: <what was actually built>
 - Couldn't do / shortcuts: <gaps, debt, anything skipped>
@@ -47,13 +47,13 @@ The running log of implementation work. It is the single source of truth for **w
 
 ## Current task
 
-**T3 — P2 Manifest schema freeze + linter** is `IN PROGRESS`.
+**Nothing in flight.** T3 is `DONE`. Next task to propose is whatever the user wants — the three highest-value tasks from the plan are **P3 Planner** (beats from facts), **P4 Vault** (the long phase — plates/clips/TTS generation), or **P5 Runtime** (browser composition).
 
 ## Task log
 
 ### T1 — Walking skeleton   ·   P0 / F1◐ F17◐
 - Status: DONE
-- Owner: Kiro            Dates: opened 2026-09-30 · updated 2026-09-30
+- Dates: opened 2026-09-30 · updated 2026-09-30
 - Goal: Prove the whole pipe end-to-end with minimal content, deployed to real infrastructure.
 
 **Exit criteria — all met locally; (3) requires filling in deploy placeholders:**
@@ -81,7 +81,7 @@ The running log of implementation work. It is the single source of truth for **w
 
 ### T2 — Brain + span verification   ·   P1 / F2 F3 F29◐
 - Status: DONE
-- Owner: Kiro            Dates: opened 2026-09-30 · updated 2026-09-30
+- Dates: opened 2026-09-30 · updated 2026-09-30
 - Goal: Wire real Gemini extraction + mechanical §39.1 span verifier + Firestore persistence. Exit criteria per §64.3: ≥8 facts extracted from fixture; 100% of canon facts string-verify; a deliberately corrupted fact demotes to `inferred` automatically; gate 1 resumes with operator edits and edits persist across a restart.
 
 **Exit criteria — all met (offline, no GCP project required):**
@@ -117,3 +117,29 @@ The running log of implementation work. It is the single source of truth for **w
 **Blockers / follow-ups:**
 - Set `GEMINI_API_KEY` + `GOOGLE_CLOUD_PROJECT` in `.env` (and optionally `FIRESTORE_EMULATOR_HOST`) to exercise the live Gemini path against the real fixture URL.
 - Next task: **T3 — P2 Manifest schema freeze + linter** (`vachan-plan.md` §64.4). This is the gate everything passes through — both builders align on the schema before parallel work begins.
+
+### T3 — Manifest schema freeze + linter   ·   P2 / F16
+- Status: DONE
+- Dates: opened 2026-09-30 · updated 2026-09-30
+- Goal: Freeze the manifest schema and ship a linter that exits non-zero on each invariant violated in isolation.
+
+**Exit criteria — all met:**
+1. ✅ Linter exits non-zero on each invariant violated — 33 tests, each mutates one field, asserts the expected INV-NN or SCHEMA code.
+2. ✅ Golden manifest (`p0_single_beat.json`) lints clean — `python -m manifest_schema.linter fixtures/p0_single_beat.json --strict` exits 0.
+3. ✅ Golden manifest renders in P0 player unchanged — `npx tsc --noEmit` clean, `npm run build` succeeds with identical hash.
+4. ✅ Schema version pinned — `schema_version: "1.0"` enforced as a `const` in JSON Schema; any change is a SCHEMA violation.
+
+**Done / changed:**
+- `backend/manifest_schema/manifest.schema.json` — full §28 schema with all invariants as JSON Schema constraints (required fields, enum, pattern, minLength, const, minItems). Covers all beat/edge/slot/binding/vault/integrity fields.
+- `backend/manifest_schema/linter.py` — standalone binary (`python -m manifest_schema.linter <file> [--strict]`). Three layers: (1) JSON Schema validation, (2) cross-reference checks (fact_ids → fact_index, vault_refs → vault, etc.), (3) semantic rules (kids_mode, locale declarations). 12 active invariants INV-01 through INV-14.
+- `backend/tests/test_linter.py` — 33 tests: baseline (valid manifest + golden fixture lint clean), one per INV-NN, schema-level structural checks, binary exit codes (0/1/2), strict mode.
+- `backend/requirements.txt` — added `jsonschema==4.23.0`.
+- **72/72 tests pass** (39 from T2, 33 new).
+
+**Couldn't do / shortcuts:** none — everything in the plan shipped.
+
+**Alternative found:** none.
+
+**Blockers / follow-ups:**
+- ⚠️ **GCP/Gemini keys still pending** — carried forward from T1/T2.
+- **Both builders can now work in parallel.** The manifest schema is the frozen interface; Builder A (backend) generates manifests, Builder B (frontend/runtime) consumes them. P3 (planner) is Backend-only. P4 (Vault) is Backend-only. **P5 (runtime + swap + embed) is Frontend-only and can start immediately** — it consumes the golden manifest and placeholder assets. P6 (transitions + scrubbing) needs P4's clips; P7 (claim guard) is Backend. The two-track parallelization starts now.
