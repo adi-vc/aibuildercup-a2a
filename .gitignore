@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Node / frontend
+node_modules/
+dist/
+.parcel-cache/
+.vite/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# GCP / credentials — never commit these
+*.json
+!package.json
+!tsconfig*.json
+!firebase.json
+!*.schema.json
+service-account-key.json
+gcp-credentials.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artefacts
+*.log
+*.tmp
+htmlcov/
+.coverage
+.pytest_cache/

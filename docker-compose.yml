@@ -1,0 +1,51 @@
+# docker-compose.yml — local development stack for Vachan.
+# Spins up the API backend with a GCS emulator (fake-gcs-server) so P0 runs
+# entirely locally without a real GCP project.
+#
+# Usage:
+#   docker compose up          — start all services
+#   docker compose up api      — start API only (if you have a real GCS bucket)
+#
+# The frontend (React/Vite) is NOT in this compose file; run it separately:
+#   cd frontend && npm run dev
+
+services:
+  # ── fake-gcs-server: local GCS emulator ─────────────────────────────────────
+  gcs-emulator:
+    image: fsouza/fake-gcs-server:1.47.8
+    ports:
+      - "4443:4443"
+    command:
+      - -scheme=http           # no TLS locally
+      - -port=4443
+      - -public-host=localhost:4443
+    volumes:
+      - gcs-data:/data
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "4443"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Vachan API (FastAPI on Cloud Run locally) ────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - GCS_EMULATOR_HOST=http://gcs-emulator:4443
+      - GCS_BUCKET=vachan-vault-local
+      - ENV=local
+      - GOOGLE_CLOUD_PROJECT=vachan-local
+    depends_on:
+      gcs-emulator:
+        condition: service_healthy
+    volumes:
+      # Mount source for hot-reload in local dev
+      - ./backend:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+
+volumes:
+  gcs-data:

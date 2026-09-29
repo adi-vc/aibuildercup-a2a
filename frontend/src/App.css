@@ -1,0 +1,86 @@
+/* App.css — minimal root layout for the P0 player */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0d0d0d;
+  color: #f0f0f0;
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.app-header {
+  padding: 24px 32px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.app-phase {
+  font-weight: 400;
+  color: #888;
+  font-size: 16px;
+}
+
+.app-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+/* ── Main ────────────────────────────────────────────────────────────────── */
+
+.app-main {
+  flex: 1;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── State messages ─────────────────────────────────────────────────────── */
+
+.state-message {
+  max-width: 480px;
+  text-align: center;
+  padding: 24px;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.state-error {
+  background: rgba(200, 0, 0, 0.08);
+  border: 1px solid rgba(200, 0, 0, 0.2);
+  border-radius: 8px;
+  color: #ff8080;
+  text-align: left;
+}
+
+.state-error small {
+  color: #888;
+}
+
+code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}

@@ -1,0 +1,40 @@
+# models.yaml — pinned model versions for every generative call in the build pipeline.
+# Printed in the build log for every asset, so each asset is reproducible from
+# (model_version, prompt, seed). Update versions here; never hardcode them in code.
+# See vachan-plan.md §32.1 for the full model assignment rationale.
+
+extraction:
+  model: gemini-2.0-flash-001          # Gemini Pro family; long context for whole-page ingestion
+  temperature: 0.0
+
+enrichment:
+  model: gemini-2.0-flash-001          # Flash; creative, never load-bearing for a claim
+  temperature: 0.7
+
+planning:
+  model: gemini-2.0-flash-001          # Structured output over the fact set
+  temperature: 0.0
+
+plate_generation:
+  model: gemini-2.0-flash-preview-image-generation   # Gemini Image; multi-reference conditioning
+  # Fallback: imagen-3.0-generate-001
+
+transition_clips:
+  model: veo-2.0-generate-001          # Veo; image-conditioned, 2–3 s clips
+  # Fallback: derived-plate cross-dissolve (pre-rendered)
+
+tts:
+  model: chirp-hd                      # Cloud TTS Chirp HD; SSML <mark> timepoints
+  voices:
+    en-IN: en-IN-Chirp-HD-D
+    hi-IN: hi-IN-Chirp-HD-A
+
+guard:
+  model: gemini-2.0-flash-001          # Flash; latency-sensitive, text-only live path
+  temperature: 0.0
+
+score:
+  model: lyria-002                     # Lyria; one 30 s bed per manifest
+
+depth:
+  model: depth-anything-v2-large       # Monocular depth; not a Google model (GPU job on Cloud Run)

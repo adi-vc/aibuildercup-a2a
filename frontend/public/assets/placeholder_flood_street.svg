@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="60%" stop-color="#1a2540"/>
+      <stop offset="100%" stop-color="#2a3a5a"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a3050" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0d1a30"/>
+    </linearGradient>
+  </defs>
+  <!-- Sky -->
+  <rect width="1280" height="720" fill="url(#sky)"/>
+  <!-- Buildings left -->
+  <rect x="0" y="120" width="180" height="600" fill="#0f1520" opacity="0.9"/>
+  <rect x="30" y="160" width="140" height="560" fill="#121a28" opacity="0.8"/>
+  <!-- Windows left building -->
+  <rect x="45" y="185" width="25" height="18" fill="#f5c842" opacity="0.7"/>
+  <rect x="80" y="185" width="25" height="18" fill="#f5c842" opacity="0.4"/>
+  <rect x="115" y="185" width="25" height="18" fill="#f5c842" opacity="0.6"/>
+  <rect x="45" y="225" width="25" height="18" fill="#f5c842" opacity="0.3"/>
+  <rect x="115" y="225" width="25" height="18" fill="#f5c842" opacity="0.8"/>
+  <!-- Buildings right -->
+  <rect x="1100" y="100" width="180" height="620" fill="#0f1520" opacity="0.9"/>
+  <rect x="1110" y="150" width="150" height="570" fill="#121a28" opacity="0.8"/>
+  <!-- Windows right building -->
+  <rect x="1125" y="175" width="25" height="18" fill="#f5c842" opacity="0.5"/>
+  <rect x="1160" y="175" width="25" height="18" fill="#f5c842" opacity="0.7"/>
+  <rect x="1195" y="175" width="25" height="18" fill="#f5c842" opacity="0.3"/>
+  <rect x="1125" y="215" width="25" height="18" fill="#f5c842" opacity="0.6"/>
+  <!-- Street / road -->
+  <rect x="0" y="500" width="1280" height="220" fill="#0d1520"/>
+  <!-- Road markings -->
+  <rect x="580" y="510" width="60" height="20" fill="#fff" opacity="0.15"/>
+  <rect x="580" y="560" width="60" height="20" fill="#fff" opacity="0.15"/>
+  <rect x="580" y="610" width="60" height="20" fill="#fff" opacity="0.15"/>
+  <!-- Flood water overlay -->
+  <rect x="0" y="560" width="1280" height="160" fill="url(#water)" opacity="0.7"/>
+  <!-- Rain lines -->
+  <line x1="200" y1="0" x2="180" y2="150" stroke="white" stroke-width="1" opacity="0.08"/>
+  <line x1="400" y1="0" x2="380" y2="150" stroke="white" stroke-width="1" opacity="0.06"/>
+  <line x1="600" y1="0" x2="580" y2="150" stroke="white" stroke-width="1" opacity="0.1"/>
+  <line x1="800" y1="0" x2="780" y2="150" stroke="white" stroke-width="1" opacity="0.07"/>
+  <line x1="1000" y1="0" x2="980" y2="150" stroke="white" stroke-width="1" opacity="0.09"/>
+  <line x1="300" y1="150" x2="275" y2="350" stroke="white" stroke-width="1" opacity="0.05"/>
+  <line x1="700" y1="100" x2="675" y2="300" stroke="white" stroke-width="1" opacity="0.07"/>
+  <!-- Placeholder label -->
+  <text x="640" y="370" text-anchor="middle" fill="white" opacity="0.3"
+        font-family="monospace" font-size="16">[ plate: plate_flood_street — P0 placeholder ]</text>
+</svg>

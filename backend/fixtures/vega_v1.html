@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<!--
+  vega_v1.html — The authoritative source document for the Vega V1 electric scooter.
+
+  FICTIONAL PRODUCT. No real brand's claims are reproduced.
+  This file is the ground truth for the demo; every on-screen claim must resolve
+  to a literal span of text in this document (vachan-plan.md §17).
+
+  Fact → span mapping for the P1 verifier:
+    f_wading_depth     → "wades through water up to 30 cm deep"
+    f_range            → "certified range of 128 km per charge (IDC)"
+    f_zero_sixty       → "0–60 km/h in 8.2 seconds"
+    f_charge_time      → "0–80% in 4 hours 30 minutes"
+    f_ground_clearance → "ground clearance of 165 mm"
+    offer_price_mumbai → "Mumbai on-road ₹1,29,900"
+    offer_price_bengaluru → "Bengaluru on-road ₹1,27,400"
+    warranty           → "3-year or 30,000 km battery warranty"
+
+  Deliberately ABSENT (to drive refusals, per §17):
+    - top speed ranking / "fastest in India" claim
+    - competitor comparisons
+    - resale value
+    - ten-year durability
+-->
+<html lang="en-IN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vega V1 — Electric Scooter | Product Specification</title>
+</head>
+<body>
+
+<header>
+  <h1>Vega V1</h1>
+  <p class="tagline">Electric scooter. Built for Indian roads.</p>
+</header>
+
+<main>
+
+  <!-- ── Overview ──────────────────────────────────────────────────────────── -->
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>
+      The Vega V1 is a commuter electric scooter designed for dense urban environments
+      and India's unpredictable monsoon conditions. It combines a practical range with
+      robust all-weather performance, and is available across major Indian cities.
+    </p>
+  </section>
+
+  <!-- ── Performance ───────────────────────────────────────────────────────── -->
+  <section id="performance">
+    <h2>Performance</h2>
+
+    <h3>Range</h3>
+    <p>
+      The Vega V1 delivers a certified range of 128 km per charge (IDC) under standard
+      test conditions. Real-world range varies with rider weight, terrain, and speed.
+    </p>
+
+    <h3>Acceleration</h3>
+    <p>
+      The V1 accelerates from 0–60 km/h in 8.2 seconds, suitable for urban traffic
+      conditions and highway on-ramps within city limits.
+    </p>
+
+    <h3>Charging</h3>
+    <p>
+      Using the supplied 750 W smart charger, the battery charges from 0–80% in
+      4 hours 30 minutes. A full charge from zero takes approximately 5 hours 45 minutes.
+      The charger is compatible with standard Indian 5 A wall sockets.
+    </p>
+  </section>
+
+  <!-- ── All-weather capability ─────────────────────────────────────────────── -->
+  <section id="weather">
+    <h2>All-Weather Capability</h2>
+    <p>
+      The Vega V1 is rated IP67 for its battery and motor housing. The V1 wades through
+      water up to 30 cm deep without performance degradation, making it reliable during
+      urban flooding events.
+    </p>
+    <p>
+      A ground clearance of 165 mm ensures the V1 clears most urban road obstacles,
+      including flooded speed breakers and kerb lips.
+    </p>
+  </section>
+
+  <!-- ── Warranty and service ──────────────────────────────────────────────── -->
+  <section id="warranty">
+    <h2>Warranty and Service</h2>
+    <p>
+      Every Vega V1 comes with a 3-year or 30,000 km battery warranty (whichever comes
+      first), covering manufacturing defects and capacity degradation below 80% of
+      rated capacity. The motor and controller carry a 2-year unlimited-km warranty.
+    </p>
+    <p>
+      Vega service centres are present in 42 cities. Roadside assistance is available
+      24 × 7 within city limits.
+    </p>
+  </section>
+
+  <!-- ── Pricing ───────────────────────────────────────────────────────────── -->
+  <section id="pricing">
+    <h2>On-Road Pricing (as of publication)</h2>
+    <p>
+      On-road prices include registration, insurance (1-year third-party), and
+      smart-charger delivery. Prices vary by city due to state subsidies and local
+      registration charges.
+    </p>
+    <table>
+      <thead>
+        <tr><th>City</th><th>On-Road Price</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Mumbai</td><td>Mumbai on-road ₹1,29,900</td></tr>
+        <tr><td>Bengaluru</td><td>Bengaluru on-road ₹1,27,400</td></tr>
+        <tr><td>Delhi NCR</td><td>Delhi NCR on-road ₹1,24,500</td></tr>
+        <tr><td>Chennai</td><td>Chennai on-road ₹1,28,200</td></tr>
+        <tr><td>Pune</td><td>Pune on-road ₹1,26,800</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Prices are subject to change. Check with your nearest Vega dealer for the
+      current on-road price in your city.
+    </p>
+  </section>
+
+  <!-- ── Specifications ────────────────────────────────────────────────────── -->
+  <section id="specifications">
+    <h2>Full Specifications</h2>
+    <table>
+      <tbody>
+        <tr><th>Motor</th><td>3 kW BLDC mid-drive</td></tr>
+        <tr><th>Battery</th><td>3.2 kWh lithium-ion NMC, removable</td></tr>
+        <tr><th>Certified range</th><td>128 km (IDC)</td></tr>
+        <tr><th>Acceleration (0–60)</th><td>8.2 seconds</td></tr>
+        <tr><th>Charging time (0–80%)</th><td>4 hours 30 minutes</td></tr>
+        <tr><th>Ground clearance</th><td>165 mm</td></tr>
+        <tr><th>Wading depth</th><td>30 cm</td></tr>
+        <tr><th>IP rating (battery + motor)</th><td>IP67</td></tr>
+        <tr><th>Kerb weight</th><td>112 kg</td></tr>
+        <tr><th>Payload capacity</th><td>150 kg</td></tr>
+        <tr><th>Wheel size</th><td>12-inch alloy</td></tr>
+        <tr><th>Brakes</th><td>Disc (F) + CBS drum (R)</td></tr>
+        <tr><th>Display</th><td>5-inch colour TFT with navigation</td></tr>
+        <tr><th>Connectivity</th><td>Bluetooth 5.0, 4G LTE (SIM slot)</td></tr>
+        <tr><th>Battery warranty</th><td>3 years or 30,000 km</td></tr>
+        <tr><th>Motor warranty</th><td>2 years, unlimited km</td></tr>
+        <tr><th>Colours</th><td>Monsoon Grey, Saffron Rush, Midnight Teal, Pearl White</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Legal ─────────────────────────────────────────────────────────────── -->
+  <section id="legal">
+    <h2>Important Notes</h2>
+    <p>
+      Range figures are certified under IDC (Indian Driving Cycle) test conditions and
+      may differ in real-world use. Pricing is indicative and subject to change without
+      notice. Vega does not make claims about comparative performance against competing
+      products. All warranty terms are subject to the standard Vega warranty policy
+      document available at vega-ev.example.com/warranty.
+    </p>
+  </section>
+
+</main>
+
+</body>
+</html>

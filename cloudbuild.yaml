@@ -1,0 +1,114 @@
+# cloudbuild.yaml — Google Cloud Build pipeline for Vachan.
+#
+# Triggered on push to main branch (configure in Cloud Build → Triggers).
+# Builds and deploys:
+#   1. Backend image → Artifact Registry → Cloud Run
+#   2. Frontend static build → Firebase Hosting
+#
+# Required substitutions (set in the trigger or project config):
+#   _REGION          e.g. asia-south1
+#   _PROJECT_ID      your GCP project id
+#   _API_SERVICE     name of the Cloud Run service, e.g. vachan-api
+#   _FIREBASE_TOKEN  (optional) use Workload Identity instead when possible
+#
+# Prerequisites:
+#   gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com
+#   gcloud artifacts repositories create vachan --repository-format=docker --location=$_REGION
+
+substitutions:
+  _REGION: asia-south1
+  _PROJECT_ID: ${PROJECT_ID}
+  _API_SERVICE: vachan-api
+  _IMAGE: ${_REGION}-docker.pkg.dev/${_PROJECT_ID}/vachan/api
+
+steps:
+
+  # ── 1. Run backend tests ──────────────────────────────────────────────────
+  - name: python:3.11-slim
+    id: backend-test
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        cd backend
+        pip install -r requirements-dev.txt -q
+        python -m pytest tests/ -v
+
+  # ── 2. Build the backend Docker image ─────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: backend-build
+    args:
+      - build
+      - -t
+      - ${_IMAGE}:${SHORT_SHA}
+      - -t
+      - ${_IMAGE}:latest
+      - ./backend
+    waitFor:
+      - backend-test
+
+  # ── 3. Push the image to Artifact Registry ────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: backend-push
+    args:
+      - push
+      - --all-tags
+      - ${_IMAGE}
+    waitFor:
+      - backend-build
+
+  # ── 4. Deploy to Cloud Run ────────────────────────────────────────────────
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    id: backend-deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_API_SERVICE}
+      - --image=${_IMAGE}:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --min-instances=0
+      - --max-instances=10
+      - --memory=512Mi
+      - --cpu=1
+      - --port=8080
+      - --set-env-vars=ENV=production,GOOGLE_CLOUD_PROJECT=${_PROJECT_ID}
+    waitFor:
+      - backend-push
+
+  # ── 5. Build the frontend ─────────────────────────────────────────────────
+  - name: node:20-slim
+    id: frontend-build
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        cd frontend
+        npm ci --silent
+        # Inject the deployed API URL so the frontend bundle points at Cloud Run
+        VITE_API_BASE_URL=$(gcloud run services describe ${_API_SERVICE} \
+          --region=${_REGION} --format='value(status.url)') \
+        npm run build
+    waitFor:
+      - backend-deploy
+
+  # ── 6. Deploy frontend to Firebase Hosting ────────────────────────────────
+  - name: node:20-slim
+    id: frontend-deploy
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        npm install -g firebase-tools --silent
+        cd frontend
+        firebase deploy --only hosting --non-interactive --project=${_PROJECT_ID}
+    waitFor:
+      - frontend-build
+
+images:
+  - ${_IMAGE}:${SHORT_SHA}
+  - ${_IMAGE}:latest
+
+timeout: 1200s
