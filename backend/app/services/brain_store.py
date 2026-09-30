@@ -41,6 +41,8 @@ class _MemoryStore:
         self._entities: dict[str, dict] = {}
         self._facts: dict[str, dict] = {}
         self._runs: dict[str, dict] = {}
+        self._plan_runs: dict[str, dict] = {}
+        self._manifests: dict[str, dict] = {}
 
     # ── Sources ────────────────────────────────────────────────────────────────
     def save_source(self, source: Source) -> None:
@@ -96,6 +98,26 @@ class _MemoryStore:
 
     def get_runs_by_source(self, source_id: str) -> list[dict]:
         return [r for r in self._runs.values() if r.get("source_id") == source_id]
+
+    # ── Planner runs / manifests ─────────────────────────────────────────────
+    def save_plan_run(self, run) -> None:
+        self._plan_runs[run.id] = run.model_dump(mode="json")
+
+    def get_plan_run(self, run_id: str) -> dict | None:
+        return self._plan_runs.get(run_id)
+
+    def update_plan_run(self, run_id: str, updates: dict) -> None:
+        if run_id in self._plan_runs:
+            self._plan_runs[run_id].update(updates)
+
+    def get_plan_runs_by_source(self, source_id: str) -> list[dict]:
+        return [r for r in self._plan_runs.values() if r.get("source_id") == source_id]
+
+    def save_manifest(self, manifest: dict) -> None:
+        self._manifests[manifest["manifest_id"]] = manifest
+
+    def get_manifest(self, manifest_id: str) -> dict | None:
+        return self._manifests.get(manifest_id)
 
 
 # ── Firestore backend ─────────────────────────────────────────────────────────
@@ -200,6 +222,30 @@ class _FirestoreStore:
             .where("source_id", "==", source_id)
             .stream()
         ]
+
+    # ── Planner runs / manifests ─────────────────────────────────────────────
+    def save_plan_run(self, run) -> None:
+        self._db.collection("plan_runs").document(run.id).set(run.model_dump(mode="json"))
+
+    def get_plan_run(self, run_id: str) -> dict | None:
+        doc = self._db.collection("plan_runs").document(run_id).get()
+        return doc.to_dict() if doc.exists else None
+
+    def update_plan_run(self, run_id: str, updates: dict) -> None:
+        self._db.collection("plan_runs").document(run_id).update(updates)
+
+    def get_plan_runs_by_source(self, source_id: str) -> list[dict]:
+        return [
+            d.to_dict() for d in self._db.collection("plan_runs")
+            .where("source_id", "==", source_id).stream()
+        ]
+
+    def save_manifest(self, manifest: dict) -> None:
+        self._db.collection("manifests").document(manifest["manifest_id"]).set(manifest)
+
+    def get_manifest(self, manifest_id: str) -> dict | None:
+        doc = self._db.collection("manifests").document(manifest_id).get()
+        return doc.to_dict() if doc.exists else None
 
 
 # ── Store factory ─────────────────────────────────────────────────────────────

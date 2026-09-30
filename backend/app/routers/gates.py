@@ -9,8 +9,9 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.models.brain import GateGroundPayload, BrainRun
+from app.models.brain import GateGroundPayload, GatePlanPayload
 from app.pipeline.brain_builder import apply_gate_ground
+from app.pipeline.planner import apply_gate_plan
 from app.services.brain_store import get_store
 
 router = APIRouter(prefix="/v1/gates", tags=["gates"])
@@ -77,6 +78,23 @@ async def gate_ground(run_id: str, payload: GateGroundPayload) -> GateResponse:
             f"Gate 1 accepted. Applied {n_edits} edit(s) and {n_drops} drop(s). "
             "Run is now done — proceed to POST /v1/plan/build."
         ),
+    )
+
+
+# ── Gate 2: beat plan review ──────────────────────────────────────────────────
+
+@router.post("/{run_id}/plan", response_model=GateResponse)
+async def gate_plan(run_id: str, payload: GatePlanPayload) -> GateResponse:
+    """Apply Gate 2 beat-plan edits, re-lint the manifest, and publish it."""
+    try:
+        run = apply_gate_plan(run_id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return GateResponse(
+        run_id=run.id,
+        status=run.status,
+        message=(f"Gate 2 accepted. Applied {len(payload.edits)} edit(s); "
+                 "manifest remains lint-clean and is ready for P4 Vault generation."),
     )
 
 

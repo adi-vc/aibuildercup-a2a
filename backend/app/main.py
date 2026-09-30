@@ -19,7 +19,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import sources, manifest, brain, gates
+from app.routers import sources, manifest, brain, gates, plans
 
 app = FastAPI(
     title="Vachan API",
@@ -48,6 +48,7 @@ app.include_router(sources.router)
 app.include_router(manifest.router)
 app.include_router(brain.router)
 app.include_router(gates.router)
+app.include_router(plans.router)
 
 
 # ── Health probe ──────────────────────────────────────────────────────────────

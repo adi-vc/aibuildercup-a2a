@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     # Model names — pulled from models.yaml at runtime but can be overridden here.
     # Keeping them in Settings means tests can swap them without touching the file.
     extraction_model: str = "gemini-2.0-flash-001"
+    planning_model: str = "gemini-2.0-flash-001"
 
     # ── Firestore ────────────────────────────────────────────────────────────────
     # Set FIRESTORE_EMULATOR_HOST to use the local emulator (e.g. localhost:8088).

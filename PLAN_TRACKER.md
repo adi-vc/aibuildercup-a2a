@@ -47,7 +47,7 @@ The running log of implementation work. It is the single source of truth for **w
 
 ## Current task
 
-**Nothing in flight.** T3 is `DONE`. Next task to propose is whatever the user wants — the three highest-value tasks from the plan are **P3 Planner** (beats from facts), **P4 Vault** (the long phase — plates/clips/TTS generation), or **P5 Runtime** (browser composition).
+**Nothing in flight.** T4 is `DONE`. P4 (Vault) or P5 (runtime + swap + embed) may be proposed next; the two tracks remain independent behind the frozen manifest schema.
 
 ## Task log
 
@@ -143,3 +143,28 @@ The running log of implementation work. It is the single source of truth for **w
 **Blockers / follow-ups:**
 - ⚠️ **GCP/Gemini keys still pending** — carried forward from T1/T2.
 - **Both builders can now work in parallel.** The manifest schema is the frozen interface; Builder A (backend) generates manifests, Builder B (frontend/runtime) consumes them. P3 (planner) is Backend-only. P4 (Vault) is Backend-only. **P5 (runtime + swap + embed) is Frontend-only and can start immediately** — it consumes the golden manifest and placeholder assets. P6 (transitions + scrubbing) needs P4's clips; P7 (claim guard) is Backend. The two-track parallelization starts now.
+
+### T4 — Planner, beats, slots, bindings, kids mode   ·   P3 / F6 F7 F8 F28 F29
+- Status: DONE
+- Dates: opened 2026-10-01 · updated 2026-10-01
+- Goal: Turn approved, verified Vega V1 facts into a 7–10 beat manifest that passes the frozen P2 linter; enforce the P3 exit criteria in tests, including Gate 2 edits and kids-mode slot safety.
+
+**Exit criteria — all met (offline):**
+1. ✅ The approved fixture produces 8 beats (within the required 7–10) through the Vega ads adapter.
+2. ✅ Every non-mood beat cites one or more verified `canon` facts; `b_hook` is explicitly `mood: true` with no fact IDs.
+3. ✅ The planner-produced manifest passes the frozen P2 linter, including fact/span, reverse-index, Vault-reference, locale, and slot invariants.
+4. ✅ A `kids_mode: true` build emits no non-sponsor slots (it currently emits no slots), asserted by test and linter.
+5. ✅ `price` is registered as `offer.by_city` with a 300-second TTL; both city-specific `offer_price_*` canon facts remain in the manifest as the published-value fallback.
+6. ✅ Gate 2 applies a constrained beat edit, re-lints, persists it, and moves the planner run to `done`.
+
+**Done / changed:**
+- `backend/app/pipeline/planner.py` — build-time planner: approved canon facts → 8-beat Vega ad manifest; fact-to-beat and fact-to-asset reverse indexes; planned P4 placeholder assets; price binding; kids-mode policy; frozen-schema lint gate; Gate 2 edit/re-lint/resume flow.
+- `backend/app/routers/plans.py` — `POST /v1/plan/build` and `GET /v1/plan/{source_id}`. `backend/app/routers/gates.py` adds `POST /v1/gates/{run_id}/plan`; `manifest.py` can now serve a linted planned manifest by ID.
+- `backend/app/models/brain.py` and `backend/app/services/brain_store.py` — persistent planner-run and manifest records for memory/Firestore backends.
+- `backend/tests/test_planner.py` — 6 offline tests cover every P3 exit criterion plus planner/Gate 2/manifest API flow. **78/78 backend tests pass**.
+
+**Couldn't do / shortcuts:** Live Gemini/Firestore execution remains unverified because `GEMINI_API_KEY` and GCP project configuration are still absent. Offline runs use the deterministic ads template, so all grounding, linting, and gate behavior is fully exercised without model credentials.
+
+**Alternative found:** The ads adapter owns beat IDs, fact assignments, bindings, and integrity indexes; Gemini structured output is restricted to bilingual copy and is rejected if it changes those structural fields. This is a deliberate safety refinement: model output cannot weaken the fact-to-beat contract. No plan update required.
+
+**Blockers / follow-ups:** P4 replaces `planned-p3` placeholder plates with content-addressed Vault assets. P5 can independently consume `m_<source_id>_standard` through `GET /v1/manifest/{manifest_id}`. Configure Gemini + GCP to exercise the live planner and Firestore persistence.

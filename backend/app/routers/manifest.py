@@ -12,6 +12,8 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
+from app.services.brain_store import get_store
+
 router = APIRouter(prefix="/v1/manifest", tags=["manifest"])
 
 # Fixtures live here during P0; real manifests will be in GCS + CDN from P5 onward.
@@ -25,11 +27,14 @@ async def get_manifest(manifest_id: str) -> JSONResponse:
 
     P0: only the fixture manifest 'p0_single_beat' is available.
     """
-    fixture_path = FIXTURES_DIR / f"{manifest_id}.json"
-    if not fixture_path.exists():
-        raise HTTPException(status_code=404, detail=f"Manifest '{manifest_id}' not found.")
-
-    data = json.loads(fixture_path.read_text())
+    # P3 persists linted, Gate-2-reviewed plans here. P5 moves this lookup to
+    # immutable GCS/CDN storage without changing the runtime contract.
+    data = get_store().get_manifest(manifest_id)
+    if data is None:
+        fixture_path = FIXTURES_DIR / f"{manifest_id}.json"
+        if not fixture_path.exists():
+            raise HTTPException(status_code=404, detail=f"Manifest '{manifest_id}' not found.")
+        data = json.loads(fixture_path.read_text())
     return JSONResponse(
         content=data,
         headers={

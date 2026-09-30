@@ -111,6 +111,38 @@ class GateGroundPayload(BaseModel):
     drops: list[str] = Field(default_factory=list)      # fact_ids to remove
 
 
+# ── Planner / Gate 2 ─────────────────────────────────────────────────────────
+
+class BeatEdit(BaseModel):
+    """An operator edit to one planned beat at gate 2."""
+    beat_id: str
+    field: str  # e.g. "text_slots.en-IN", "hinge.in", or "fact_ids"
+    new_value: Any
+
+
+class GatePlanPayload(BaseModel):
+    """Body of POST /v1/gates/{run_id}/plan — resume after beat-plan review."""
+    edits: list[BeatEdit] = Field(default_factory=list)
+
+
+class PlanRun(BaseModel):
+    """Build-time planner run; never read by the browser runtime."""
+    model_config = {"protected_namespaces": ()}
+    id: str = Field(default_factory=lambda: f"plan_{uuid.uuid4().hex[:12]}")
+    source_id: str
+    brain_run_id: str
+    status: RunStatus = "running"
+    step: str = "plan"
+    manifest_id: str = ""
+    beat_count: int = 0
+    kids_mode: bool = False
+    model_used: str = "ads-template-v1"
+    offline: bool = True
+    error: str = ""
+    created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+    updated_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+
+
 # ── Brain query result ────────────────────────────────────────────────────────
 
 class BrainResult(BaseModel):
