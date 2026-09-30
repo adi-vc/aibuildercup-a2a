@@ -30,6 +30,15 @@ The running log of implementation work. It is the single source of truth for **w
 | `BLOCKED` | Cannot proceed; reason + what's needed to unblock recorded. |
 | `DEFERRED` / `CUT` | Intentionally postponed or dropped (e.g. via the §65 cut line); reason recorded. |
 
+## Hosted validation register
+
+Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for every shared-cloud deployment or hosted-validation task. Add future hosting work here with its task ID, environment, owner, non-secret evidence, and status. Hosted work stays `DEFERRED` while local development can safely continue; use `BLOCKED` only when it prevents required progress.
+
+| Task | Status | Environment | Remaining hosted proof |
+|---|---|---|---|
+| T1 · P0 walking skeleton | `DEFERRED` | Shared GCP / Firebase Hosting | External device/network opens the deployed frontend; source upload reaches shared GCS. |
+| T2 · P1 Brain persistence | `DEFERRED` | Firestore emulator or shared Firestore | A Gate 1 edit survives a complete API-process restart. |
+
 ## Entry template (copy this per task)
 
 ```
@@ -77,7 +86,7 @@ The running log of implementation work. It is the single source of truth for **w
 
 **Blockers / follow-ups:**
 - To fully satisfy exit criterion 3: fill in `frontend/.firebaserc`, `cloudrun-service.yaml`, and `cloudbuild.yaml` substitutions with real GCP/Firebase project IDs, then run `gcloud builds submit`.
-- **Deferred hosted validation:** This does not block later build phases. Complete the T1 hosted-test checklist in the 2026-10-01 audit note below when a GCP/Firebase project is available, then restore `DONE` only after an external device opens the deployed frontend.
+- **Deferred hosted validation:** This does not block later build phases. Follow [`docs/HOSTED_VALIDATION_RUNBOOK.md`](docs/HOSTED_VALIDATION_RUNBOOK.md) when a GCP/Firebase project is available, then restore `DONE` only after an external device opens the deployed frontend.
 - Next task: **T2 — P1 Brain + span verification** (`vachan-plan.md` §64.3). This wires real Gemini extraction + the §39.1 mechanical span verifier, replacing the 3 stub facts in `brain.py`.
 
 ### T2 — Brain + span verification   ·   P1 / F2 F3 F29◐
@@ -118,7 +127,7 @@ The running log of implementation work. It is the single source of truth for **w
 **Blockers / follow-ups:**
 - Set `GEMINI_API_KEY` + `GOOGLE_CLOUD_PROJECT` in `.env` (and optionally `FIRESTORE_EMULATOR_HOST`) to exercise the live Gemini path against the real fixture URL.
 - **Audit correction, 2026-10-01:** the old “restart” test re-read the same in-memory store and therefore could not prove persistence across a process restart. Run the Gate 1 edit flow against Firestore or its emulator, then restart the API before restoring `DONE`.
-- **Deferred hosted validation:** This does not block later build phases. Complete the T2 persistence checklist in the 2026-10-01 audit note below when Firestore/emulator infrastructure is available, then restore `DONE` after the persisted edit is read by a new API process.
+- **Deferred hosted validation:** This does not block later build phases. Follow [`docs/HOSTED_VALIDATION_RUNBOOK.md`](docs/HOSTED_VALIDATION_RUNBOOK.md) when Firestore/emulator infrastructure is available, then restore `DONE` after the persisted edit is read by a new API process.
 - Next task: **T3 — P2 Manifest schema freeze + linter** (`vachan-plan.md` §64.4). This is the gate everything passes through — both builders align on the schema before parallel work begins.
 
 ### T3 — Manifest schema freeze + linter   ·   P2 / F16
