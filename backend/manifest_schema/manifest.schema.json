@@ -105,12 +105,16 @@
       "additionalProperties": true,
       "properties": {
         "id": { "type": "string", "minLength": 1 },
-        "kind": {
+      "kind": {
           "type": "string",
           "enum": ["hold", "transition", "ask_overlay"],
-          "description": "hold = still plate + parallax; transition = generated clip; ask_overlay = inspector panel"
-        },
-        "fact_ids": {
+        "description": "hold = still plate + parallax; transition = generated clip; ask_overlay = inspector panel"
+      },
+      "mood": {
+        "type": "boolean",
+        "description": "True only for a non-stating beat; mood beats must cite no facts."
+      },
+      "fact_ids": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
           "description": "Every stating beat must cite ≥1 fact_id. Mood beats cite none and declare kind=hold with empty list."

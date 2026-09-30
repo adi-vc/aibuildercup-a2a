@@ -32,6 +32,8 @@ export interface Hinge {
 export interface Beat {
   id: string;
   kind: 'hold' | 'transition' | 'ask_overlay';
+  /** An atmospheric non-claim beat; it must not cite facts. */
+  mood?: boolean;
   fact_ids: string[];
   vault_refs: string[];
   text_slots: Record<Locale, string>;

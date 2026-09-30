@@ -52,11 +52,11 @@ The running log of implementation work. It is the single source of truth for **w
 ## Task log
 
 ### T1 — Walking skeleton   ·   P0 / F1◐ F17◐
-- Status: DONE
-- Dates: opened 2026-09-30 · updated 2026-09-30
+- Status: DEFERRED
+- Dates: opened 2026-09-30 · updated 2026-10-01
 - Goal: Prove the whole pipe end-to-end with minimal content, deployed to real infrastructure.
 
-**Exit criteria — all met locally; (3) requires filling in deploy placeholders:**
+**Exit criteria — criteria 1–2 are met locally; hosted criterion 3 is deferred:**
 1. ✅ `POST /v1/sources/upload` accepts the fixture HTML, snapshots it to GCS (emulated locally via fake-gcs-server), returns a `source_id` + 3 stub facts.
 2. ✅ The `p0_single_beat` manifest renders in a browser at `http://localhost:5173` — dark city-street SVG with "30 cm of water. Still going." overlaid as a text layer. Switching locale dropdown to `hi-IN` swaps the text without changing the image (text-is-a-layer proven in P0).
 3. ⚠️ **Awaiting GCP project setup.** All deploy config is in place (`cloudbuild.yaml`, `cloudrun-service.yaml`, `frontend/.firebaserc`) but `YOUR_FIREBASE_PROJECT_ID` / `YOUR_PROJECT_ID` / `YOUR_REGION` are still placeholders. A teammate fills those in and runs `gcloud builds submit` to complete criterion 3.
@@ -77,18 +77,19 @@ The running log of implementation work. It is the single source of truth for **w
 
 **Blockers / follow-ups:**
 - To fully satisfy exit criterion 3: fill in `frontend/.firebaserc`, `cloudrun-service.yaml`, and `cloudbuild.yaml` substitutions with real GCP/Firebase project IDs, then run `gcloud builds submit`.
+- **Deferred hosted validation:** This does not block later build phases. Complete the T1 hosted-test checklist in the 2026-10-01 audit note below when a GCP/Firebase project is available, then restore `DONE` only after an external device opens the deployed frontend.
 - Next task: **T2 — P1 Brain + span verification** (`vachan-plan.md` §64.3). This wires real Gemini extraction + the §39.1 mechanical span verifier, replacing the 3 stub facts in `brain.py`.
 
 ### T2 — Brain + span verification   ·   P1 / F2 F3 F29◐
-- Status: DONE
-- Dates: opened 2026-09-30 · updated 2026-09-30
+- Status: DEFERRED
+- Dates: opened 2026-09-30 · updated 2026-10-01
 - Goal: Wire real Gemini extraction + mechanical §39.1 span verifier + Firestore persistence. Exit criteria per §64.3: ≥8 facts extracted from fixture; 100% of canon facts string-verify; a deliberately corrupted fact demotes to `inferred` automatically; gate 1 resumes with operator edits and edits persist across a restart.
 
-**Exit criteria — all met (offline, no GCP project required):**
+**Exit criteria — criteria 1–3 are met offline; Firestore-backed restart validation for criterion 4 is deferred:**
 1. ✅ ≥ 8 facts extracted: pipeline produces exactly 8 facts from the fixture stub (all §17 facts present).
 2. ✅ 100% of canon facts string-verify: `test_coverage_is_one_hundred_percent` passes; all 8 verbatim quotes from `fixtures.py` pass the §39.1 exact-match check against `vega_v1.html`.
 3. ✅ Paraphrase/corruption demotes automatically: `test_paraphrase_quote_demotes_to_inferred` and `test_invented_claim_demotes_to_inferred` both pass — the verifier returns `verified=False`, builder sets `origin="inferred"`, no human intervention.
-4. ✅ Gate 1 edits persist: `test_gate1_edit_persists`, `test_gate1_drop_removes_fact`, and `test_gate1_edits_persist_across_store_reads` all pass.
+4. ⚠️ Gate 1 edits persist during the in-memory process (`test_gate1_edit_persists`, `test_gate1_drop_removes_fact`, and `test_gate1_edits_persist_across_store_reads` pass), but true process-restart persistence is not demonstrated until Firestore/emulator is configured.
 
 **Done / changed:**
 - `backend/app/pipeline/extractor.py` — Gemini structured-output extraction (§37.1 schema, temperature=0) with offline stub fallback when `GEMINI_API_KEY` is unset. Stub uses verbatim quotes from `fixtures.py` so the verifier runs on real data even offline.
@@ -116,6 +117,8 @@ The running log of implementation work. It is the single source of truth for **w
 
 **Blockers / follow-ups:**
 - Set `GEMINI_API_KEY` + `GOOGLE_CLOUD_PROJECT` in `.env` (and optionally `FIRESTORE_EMULATOR_HOST`) to exercise the live Gemini path against the real fixture URL.
+- **Audit correction, 2026-10-01:** the old “restart” test re-read the same in-memory store and therefore could not prove persistence across a process restart. Run the Gate 1 edit flow against Firestore or its emulator, then restart the API before restoring `DONE`.
+- **Deferred hosted validation:** This does not block later build phases. Complete the T2 persistence checklist in the 2026-10-01 audit note below when Firestore/emulator infrastructure is available, then restore `DONE` after the persisted edit is read by a new API process.
 - Next task: **T3 — P2 Manifest schema freeze + linter** (`vachan-plan.md` §64.4). This is the gate everything passes through — both builders align on the schema before parallel work begins.
 
 ### T3 — Manifest schema freeze + linter   ·   P2 / F16
@@ -143,6 +146,8 @@ The running log of implementation work. It is the single source of truth for **w
 **Blockers / follow-ups:**
 - ⚠️ **GCP/Gemini keys still pending** — carried forward from T1/T2.
 - **Both builders can now work in parallel.** The manifest schema is the frozen interface; Builder A (backend) generates manifests, Builder B (frontend/runtime) consumes them. P3 (planner) is Backend-only. P4 (Vault) is Backend-only. **P5 (runtime + swap + embed) is Frontend-only and can start immediately** — it consumes the golden manifest and placeholder assets. P6 (transitions + scrubbing) needs P4's clips; P7 (claim guard) is Backend. The two-track parallelization starts now.
+- **Audit correction, 2026-10-01:** `INV-14` was documented but implemented as a no-op, so a stating beat could have no facts. It now rejects that state, permits only explicit `mood: true` factless beats, and has isolated tests. This is a backward-compatible schema clarification, not a manifest-version change.
+- **Audit correction, 2026-10-01:** Cloud Build now runs the strict golden-manifest linter after the backend suite, satisfying P2's every-push CI requirement.
 
 ### T4 — Planner, beats, slots, bindings, kids mode   ·   P3 / F6 F7 F8 F28 F29
 - Status: DONE

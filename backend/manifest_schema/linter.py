@@ -280,27 +280,25 @@ class ManifestLinter:
 
     def _check_inv14_stating_beats_have_fact_ids(self) -> None:
         """
-        INV-14: A beat whose text asserts a claim (non-empty fact_ids) must have
-        at least one entry in fact_ids.
-
-        This invariant is the inverse: it catches beats with non-empty text_slots
-        that have explicitly set fact_ids to a non-empty list but left it empty
-        after editing.  (An empty list is valid for mood beats; the constraint is
-        that you don't accidentally leave a half-wired beat with an empty list
-        when the intent was to cite facts.)
-
-        Implementation: we flag beats where fact_ids is explicitly a non-empty list
-        with a 0-length array (contradictory state) — currently JSON Schema enforces
-        the array type; this check guards against the empty-after-edit case by
-        requiring that if text_slots has content, fact_ids must be present.
-        In P2 this is advisory (warning) because mood beats legitimately have
-        empty fact_ids.  We only error if fact_ids is present but literally [].
+        INV-14: Every non-mood (stating) beat cites at least one fact. Mood beats
+        are explicitly marked `mood: true` and cite no facts. This is the plan's
+        distinction between an atmospheric hold and an on-screen claim.
         """
-        # Advisory only at P2 — not raising a violation for empty fact_ids on
-        # mood beats (they are valid). This invariant remains as a hook for P3
-        # when the planner will set fact_ids=[] intentionally on mood beats and
-        # we can distinguish by a "mood" kind flag.
-        pass
+        for beat in self.m.get("beats", []):
+            fact_ids = beat.get("fact_ids", [])
+            mood = beat.get("mood", False)
+            if mood and fact_ids:
+                self._add(
+                    "INV-14",
+                    f"Mood beat '{beat['id']}' must not cite fact_ids.",
+                    path=f"beats[{beat['id']}].fact_ids",
+                )
+            elif not mood and not fact_ids:
+                self._add(
+                    "INV-14",
+                    f"Stating beat '{beat['id']}' must cite at least one fact_id or declare mood=true.",
+                    path=f"beats[{beat['id']}].fact_ids",
+                )
 
     # ── Helper ────────────────────────────────────────────────────────────────
 

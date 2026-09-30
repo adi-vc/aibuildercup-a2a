@@ -351,6 +351,30 @@ def test_inv13_clean_when_locale_declared():
     assert not _has(violations, "INV-13"), f"Unexpected INV-13: {violations}"
 
 
+# ── INV-14: stating beats cite facts; mood beats are explicit ────────────────
+
+def test_inv14_stating_beat_without_facts_fails():
+    m = copy.deepcopy(VALID_MANIFEST)
+    m["beats"][0]["fact_ids"] = []
+    violations = ManifestLinter(m).run()
+    assert _has(violations, "INV-14"), f"Expected INV-14, got {_codes(violations)}"
+
+
+def test_inv14_explicit_mood_beat_without_facts_is_valid():
+    m = copy.deepcopy(VALID_MANIFEST)
+    m["beats"][0]["fact_ids"] = []
+    m["beats"][0]["mood"] = True
+    violations = ManifestLinter(m).run()
+    assert not _has(violations, "INV-14"), f"Unexpected INV-14: {violations}"
+
+
+def test_inv14_mood_beat_with_facts_fails():
+    m = copy.deepcopy(VALID_MANIFEST)
+    m["beats"][0]["mood"] = True
+    violations = ManifestLinter(m).run()
+    assert _has(violations, "INV-14"), f"Expected INV-14, got {_codes(violations)}"
+
+
 # ── Schema-level structural violations ───────────────────────────────────────
 
 def test_schema_missing_required_top_level_field():

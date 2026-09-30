@@ -33,6 +33,7 @@ steps:
         cd backend
         pip install -r requirements-dev.txt -q
         python -m pytest tests/ -v
+        python -m manifest_schema.linter fixtures/p0_single_beat.json --strict
 
   # ── 2. Build the backend Docker image ─────────────────────────────────────
   - name: gcr.io/cloud-builders/docker
