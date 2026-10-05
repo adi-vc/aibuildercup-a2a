@@ -33,6 +33,8 @@ export interface Beat {
   kind: 'hold' | 'transition' | 'ask_overlay';
   /** An atmospheric non-claim beat; it must not cite facts. */
   mood?: boolean;
+  /** Reached only through an edge; skipped by the main sequence (INV-17). */
+  branch_only?: boolean;
   fact_ids: string[];
   vault_refs: string[];
   text_slots: Record<Locale, string>;

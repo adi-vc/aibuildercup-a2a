@@ -113,3 +113,23 @@ def test_manifest_publishes_cited_facts_with_verified_quotes():
         assert fact["origin"] == "canon"
         assert fact["quote"] == spans[manifest["integrity"]["fact_index"][fid]]
     assert published["offer_price_bengaluru"]["value"] == "127400"
+
+
+def test_manifest_has_hero_edges_with_all_intra_clips_and_a_reachable_branch():
+    """T7 / P6: the drag-up spec branch and the click edge, with clip assets and derived plates."""
+    approved_brain()
+    _, manifest = run_plan_build(SOURCE_ID)
+    assert ManifestLinter(manifest).run() == []
+    edges = {e["id"]: e for e in manifest["edges"]}
+    assert edges["e_flood_spec"]["trigger"] == "drag_up" and edges["e_flood_spec"]["to"] == "b_spec_overlay"
+    assert edges["e_range_offer"]["trigger"] == "click"
+    beats = {b["id"]: b for b in manifest["beats"]}
+    assert beats["b_spec_overlay"]["branch_only"] is True
+    assert "e_flood_spec" in beats["b_flood"]["edges"]
+    for edge in edges.values():
+        assert manifest["vault"][edge["clip"]]["kind"] == "clip"
+        target_plate = manifest["vault"][beats[edge["to"]]["vault_refs"][0]]
+        assert target_plate["model"] == "derived-last-frame"
+    # The spec branch cites real spans for every fact it shows.
+    for fid in beats["b_spec_overlay"]["fact_ids"]:
+        assert fid in manifest["integrity"]["fact_index"]

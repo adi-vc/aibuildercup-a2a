@@ -13,7 +13,8 @@ import { fetchManifest, resolveBindings } from '../api/client';
 import type { Manifest } from '../types/manifest';
 import { BindingCache } from '../runtime/bindings';
 import { VachanComposition } from '../runtime/composition';
-import { beatPosterFrame, durationFor, FPS, HEIGHT, WIDTH } from '../runtime/timeline';
+import { posterFrame, spinePath, timeline, totalFrames } from '../runtime/path';
+import { FPS, HEIGHT, WIDTH } from '../runtime/timeline';
 import { CITIES } from '../runtime/profile';
 import { readEnvironment } from '../runtime/tier';
 import styles from './VariantGrid.module.css';
@@ -87,16 +88,18 @@ export function VariantGrid({ manifest }: { manifest: Manifest }) {
         {variants.map(({ m, locale, city }) => {
           const bound = m.beats.find((b) => b.bindings.length > 0) ?? m.beats[0];
           const bindings = cache.resolveAll(m, city.id, locale, resolvedAt);
+          const path = spinePath(m);
+          const tl = timeline(m, path);
           return (
             <figure key={`${m.manifest_id}|${locale}|${city.id}`} className={styles.cell}>
               <Thumbnail
                 component={VachanComposition}
-                inputProps={{ manifest: m, locale, bindings, env }}
+                inputProps={{ manifest: m, locale, bindings, env, path }}
                 compositionWidth={WIDTH}
                 compositionHeight={HEIGHT}
-                durationInFrames={durationFor(m)}
+                durationInFrames={totalFrames(tl)}
                 fps={FPS}
-                frameToDisplay={beatPosterFrame(m, bound.id)}
+                frameToDisplay={posterFrame(tl, bound.id)}
                 style={{ width: '100%' }}
               />
               <figcaption>

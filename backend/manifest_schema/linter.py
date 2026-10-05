@@ -45,6 +45,8 @@ Invariants (§39.9 + §26 + §28):
   INV-15  linted_at is present and non-empty (already schema)
   INV-16  If integrity.facts is present, its keys equal integrity.fact_index's
           and every entry is origin=canon (only canon facts may reach a viewer)
+  INV-17  Every branch_only beat is the `to` of at least one edge (reachable)
+  INV-18  Every non-empty edge.clip resolves to a vault asset of kind `clip`
 """
 
 from __future__ import annotations
@@ -115,6 +117,8 @@ class ManifestLinter:
         self._check_inv13_text_slot_locales_declared()
         self._check_inv14_stating_beats_have_fact_ids()
         self._check_inv16_published_facts_match_fact_index()
+        self._check_inv17_branch_beats_reachable()
+        self._check_inv18_edge_clips_in_vault()
 
         return self._violations
 
@@ -325,6 +329,23 @@ class ManifestLinter:
             if fact.get("origin") != "canon":
                 self._add("INV-16", f"integrity.facts['{fid}'] is origin={fact.get('origin')!r}; only canon may ship",
                           path=f"integrity.facts[{fid}]")
+
+    def _check_inv17_branch_beats_reachable(self) -> None:
+        """INV-17: a branch_only beat is skipped by the main sequence, so an edge must lead to it."""
+        targets = {e.get("to") for e in self.m.get("edges", [])}
+        for beat in self.m.get("beats", []):
+            if beat.get("branch_only") and beat["id"] not in targets:
+                self._add("INV-17", f"branch_only beat '{beat['id']}' is not the target of any edge (unreachable)",
+                          path=f"beats[{beat['id']}]")
+
+    def _check_inv18_edge_clips_in_vault(self) -> None:
+        """INV-18: an edge that names a clip must point at a clip asset (empty clip = a cut)."""
+        vault = self.m.get("vault", {})
+        for edge in self.m.get("edges", []):
+            clip = edge.get("clip", "")
+            if clip and vault.get(clip, {}).get("kind") != "clip":
+                self._add("INV-18", f"Edge '{edge['id']}' clip '{clip}' is not a clip asset in vault",
+                          path=f"edges[{edge['id']}].clip")
 
     # ── Helper ────────────────────────────────────────────────────────────────
 

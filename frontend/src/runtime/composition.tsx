@@ -1,7 +1,8 @@
 /**
  * composition.tsx — the Remotion composition (vachan-plan.md §29, §47).
  *
- * One <Sequence> per hold beat. Each hold stacks the §47 layers:
+ * One <Sequence> per segment of the viewer's *path* (path.ts): holds, and the
+ * edge clips between them (§26). Each hold stacks the §47 layers:
  *   L0 plate      — the only generated pixels, identical for every viewer
  *   L1 motion     — depth parallax (WebGL), else Ken Burns, else none (§29 ladder)
  *   L3 text       — locale copy + the resolved binding (price), never baked
@@ -9,17 +10,19 @@
  * Nothing here generates: every input arrives as props, so a locale or city
  * swap is a re-render of layers over the same plate. A failing plate or
  * shader drops a rung; the text layer is independent and always renders.
+ * Holds begin and end on their hinge frame, so a clip joins them exactly.
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { AbsoluteFill, Img, interpolate, Sequence, useCurrentFrame } from 'remotion';
-import type { Beat, Manifest } from '../types/manifest';
+import { AbsoluteFill, Html5Video, Img, interpolate, Sequence, useCurrentFrame } from 'remotion';
+import type { Beat, Edge, Manifest } from '../types/manifest';
 import { bindingTag, type BindingResolution } from './bindings';
 import { shownFactIds } from './claims';
 import styles from './composition.module.css';
 import { DepthParallax } from './DepthParallax';
 import { markFirstFrame } from './firstFrame';
-import { HOLD_FRAMES, TEXT_IN_START, TEXT_SETTLED } from './timeline';
+import { timeline, type Segment } from './path';
+import { kenBurnsScale, TEXT_IN_START, TEXT_SETTLED } from './timeline';
 import { renderPlan, type Tier, type ViewerEnv } from './tier';
 
 export interface CompositionProps extends Record<string, unknown> {
@@ -28,6 +31,8 @@ export interface CompositionProps extends Record<string, unknown> {
   bindings: Record<string, BindingResolution>;
   /** Degradation-ladder inputs (tier.ts). */
   env: { tier: Tier; viewer: ViewerEnv };
+  /** What plays, in order: holds and edge clips (path.ts). */
+  path: Segment[];
 }
 
 // ── L4: fact badge ───────────────────────────────────────────────────────────
@@ -101,7 +106,7 @@ function PlateLayer({ beat, manifest, env }: Pick<CompositionProps, 'manifest' |
       />
     );
   }
-  const scale = motion === 'kenburns' ? interpolate(frame, [0, HOLD_FRAMES], [1, 1.06]) : 1;
+  const scale = motion === 'kenburns' ? kenBurnsScale(frame) : 1;
   return (
     <Img
       src={plateSrc}
@@ -134,6 +139,15 @@ function Hold({ beat, manifest, locale, bindings, env }: { beat: Beat } & Compos
         )}
       </div>
 
+      {/* L3: a branch beat's spec sheet — published facts, each with its badge (§18 b_spec_overlay) */}
+      {beat.branch_only && (
+        <ul className={styles.specPanel} style={{ opacity: textIn }}>
+          {beat.fact_ids.map((fid) => (
+            <li key={fid}>{manifest.integrity.facts?.[fid]?.text ?? fid}</li>
+          ))}
+        </ul>
+      )}
+
       {/* L4 */}
       <div className={styles.badgeRow}>
         {shownFactIds(beat, bindings).map((fid) => (
@@ -144,14 +158,57 @@ function Hold({ beat, manifest, locale, bindings, env }: { beat: Beat } & Compos
   );
 }
 
+// ── One edge clip ────────────────────────────────────────────────────────────
+
+/**
+ * L0 is the generated clip; the source beat's copy fades over the first
+ * quarter so text leaves with the footage. Clips are all-intra (§39.12), so
+ * the Player can seek them to any frame in either direction. Below the
+ * `low` tier, or under reduced motion, the edge is a cut to the target plate.
+ */
+function EdgeClip({ edge, frames, manifest, locale, env }: { edge: Edge; frames: number } & CompositionProps) {
+  const frame = useCurrentFrame();
+  const clip = manifest.vault[edge.clip];
+  const from = manifest.beats.find((b) => b.id === edge.from);
+  const target = manifest.vault[manifest.beats.find((b) => b.id === edge.to)?.vault_refs[0] ?? ''];
+  const clipsAllowed = renderPlan(env.tier, env.viewer, false).clips;
+  const fadeOut = interpolate(frame, [0, Math.max(1, frames * 0.25)], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const text = from ? from.text_slots[locale] ?? from.text_slots['en-IN'] ?? '' : '';
+
+  return (
+    <AbsoluteFill className={styles.hold} data-edge={edge.id}>
+      {clip && clipsAllowed ? (
+        <Html5Video src={clip.uri} muted className={styles.plate} />
+      ) : target ? (
+        <Img src={target.uri} className={styles.plate} />
+      ) : (
+        <AbsoluteFill className={styles.platePlaceholder} />
+      )}
+      {text && clipsAllowed && (
+        <div className={styles.textLayer} style={{ opacity: fadeOut }}>
+          <p className={styles.beatText} lang={locale}>{text}</p>
+        </div>
+      )}
+    </AbsoluteFill>
+  );
+}
+
 export function VachanComposition(props: CompositionProps) {
+  const beats = new Map(props.manifest.beats.map((b) => [b.id, b]));
+  const edges = new Map(props.manifest.edges.map((e) => [e.id, e]));
   return (
     <AbsoluteFill className={styles.stage}>
-      {props.manifest.beats.map((beat, i) => (
-        <Sequence key={beat.id} from={i * HOLD_FRAMES} durationInFrames={HOLD_FRAMES} name={beat.id}>
-          <Hold beat={beat} {...props} />
-        </Sequence>
-      ))}
+      {timeline(props.manifest, props.path).map(({ segment, start, frames }, i) => {
+        const id = segment.kind === 'hold' ? segment.beatId : segment.edgeId;
+        const beat = segment.kind === 'hold' ? beats.get(segment.beatId) : undefined;
+        const edge = segment.kind === 'edge' ? edges.get(segment.edgeId) : undefined;
+        return (
+          <Sequence key={`${i}-${id}`} from={start} durationInFrames={frames} name={id}>
+            {beat && <Hold beat={beat} {...props} />}
+            {edge && <EdgeClip edge={edge} frames={frames} {...props} />}
+          </Sequence>
+        );
+      })}
     </AbsoluteFill>
   );
 }

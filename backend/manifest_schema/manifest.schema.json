@@ -114,6 +114,10 @@
         "type": "boolean",
         "description": "True only for a non-stating beat; mood beats must cite no facts."
       },
+      "branch_only": {
+        "type": "boolean",
+        "description": "Optional (T7, additive): the beat is reached only through an edge and is skipped by the main sequence. Must be the `to` of at least one edge (INV-17)."
+      },
       "fact_ids": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 },

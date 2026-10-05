@@ -1,0 +1,50 @@
+{
+  "generator": "placeholder-clips-v1",
+  "encoder_args": [
+    "-c:v",
+    "libx264",
+    "-preset",
+    "medium",
+    "-crf",
+    "26",
+    "-g",
+    "1",
+    "-keyint_min",
+    "1",
+    "-sc_threshold",
+    "0",
+    "-bf",
+    "0",
+    "-pix_fmt",
+    "yuv420p",
+    "-movflags",
+    "+faststart",
+    "-an"
+  ],
+  "clips": {
+    "clip_flood_to_spec": {
+      "asset_id": "clip_5bd6e49e6268c85f",
+      "uri": "/assets/vault/clip_5bd6e49e6268c85f.mp4",
+      "fps": 24,
+      "duration_s": 3.0,
+      "frames": 72,
+      "from_plate_uri": "/assets/placeholder_flood_street.png",
+      "derived_plate": {
+        "asset_id": "plate_37a02026ecbce127",
+        "uri": "/assets/vault/plate_37a02026ecbce127.png"
+      }
+    },
+    "clip_range_to_offer": {
+      "asset_id": "clip_ac281b212104c788",
+      "uri": "/assets/vault/clip_ac281b212104c788.mp4",
+      "fps": 24,
+      "duration_s": 2.5,
+      "frames": 60,
+      "from_plate_uri": "/assets/placeholder_flood_street.png",
+      "derived_plate": {
+        "asset_id": "plate_6920a79936b3bb87",
+        "uri": "/assets/vault/plate_6920a79936b3bb87.png"
+      }
+    }
+  }
+}

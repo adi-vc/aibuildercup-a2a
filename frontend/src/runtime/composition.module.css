@@ -143,3 +143,27 @@
   font-style: italic;
   margin-bottom: 8px !important;
 }
+
+/* ── L3 spec sheet (branch beats) ─────────────────────────────────────────── */
+
+.specPanel {
+  position: absolute;
+  top: 40px;
+  left: 56px;
+  max-width: 640px;
+  margin: 0;
+  padding: 20px 28px;
+  list-style: none;
+  background: rgba(8, 10, 14, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  color: #f2f2f2;
+  font-size: 30px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.specPanel li::before {
+  content: '— ';
+  color: #ffd166;
+}

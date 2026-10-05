@@ -1,9 +1,8 @@
 /**
- * timeline.ts — composition geometry and timing, shared by the player, the
- * variant grid and the composition itself.
+ * timeline.ts — composition geometry, timing and hold motion, shared by the
+ * player, the variant grid and the composition itself. Path-dependent timing
+ * (where each segment starts) lives in path.ts.
  */
-
-import type { Manifest } from '../types/manifest';
 
 export const FPS = 30;
 export const HOLD_FRAMES = 3 * FPS;
@@ -14,23 +13,26 @@ export const HEIGHT = 720;
 export const TEXT_IN_START = 6;
 export const TEXT_SETTLED = 18;
 
-export function durationFor(manifest: Manifest): number {
-  return Math.max(1, manifest.beats.length) * HOLD_FRAMES;
+/**
+ * Motion envelope of a hold: 0 on its first and last frame, 1 mid-hold.
+ * Every hold therefore begins and ends on its *hinge frame* — the plate with
+ * no zoom or drift (§26) — which is the exact first frame of an outgoing edge
+ * clip and the exact last frame of an incoming one (§39.3). Pure in the frame.
+ */
+export function holdMotion(frame: number): number {
+  const t = Math.min(1, Math.max(0, frame / (HOLD_FRAMES - 1)));
+  return Math.sin(Math.PI * t);
 }
 
-/** The frame a given beat starts on — used by the variant grid's thumbnails. */
-export function beatStartFrame(manifest: Manifest, beatId: string): number {
-  return Math.max(0, manifest.beats.findIndex((b) => b.id === beatId)) * HOLD_FRAMES;
+/** Ken Burns scale at a frame (fallback motion). */
+export function kenBurnsScale(frame: number): number {
+  return 1 + 0.06 * holdMotion(frame);
 }
 
-/** Parallax camera drift at a frame within a hold: a slow lateral dolly plus a
- *  slight rise. Pure in the frame, so every render of a frame is identical. */
-export function parallaxOffset(frame: number): [number, number] {
-  const t = Math.min(1, Math.max(0, frame / HOLD_FRAMES)) - 0.5;
-  return [t * 0.035, t * 0.012];
-}
-
-/** First frame of a beat with its text fully in — for entry points and thumbnails. */
-export function beatPosterFrame(manifest: Manifest, beatId: string): number {
-  return beatStartFrame(manifest, beatId) + TEXT_SETTLED + 2;
+/** Parallax camera at a frame: [uv offset x, uv offset y, overscan scale]. The
+ *  overscan grows with the drift so displaced lookups stay on the plate, and
+ *  returns to 1 (no zoom) at the hinge frames. */
+export function parallaxOffset(frame: number): [number, number, number] {
+  const s = holdMotion(frame);
+  return [0.02 * s, 0.008 * s, 1 - 0.04 * s];
 }

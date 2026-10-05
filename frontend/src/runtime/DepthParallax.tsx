@@ -28,10 +28,11 @@ precision mediump float;
 uniform sampler2D u_plate;
 uniform sampler2D u_depth;
 uniform vec2 u_offset;
+uniform float u_scale;
 varying vec2 v_uv;
 void main() {
-  // Overscan 4% so displaced lookups never sample past the plate's edge.
-  vec2 uv = 0.5 + (v_uv - 0.5) * 0.96;
+  // Overscan with the drift so displaced lookups never leave the plate; 1.0 at hinge frames.
+  vec2 uv = 0.5 + (v_uv - 0.5) * u_scale;
   float depth = texture2D(u_depth, uv).r;          // 1 = near, 0 = far
   uv += u_offset * (depth - 0.4);                  // near moves against far
   gl_FragColor = texture2D(u_plate, clamp(uv, 0.0, 1.0));
@@ -77,7 +78,7 @@ interface Props {
 export function DepthParallax({ plateSrc, depthSrc, className, onReady, onFallback }: Props) {
   const frame = useCurrentFrame();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const glRef = useRef<{ gl: WebGLRenderingContext; offset: WebGLUniformLocation } | null>(null);
+  const glRef = useRef<{ gl: WebGLRenderingContext; offset: WebGLUniformLocation; scale: WebGLUniformLocation } | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -104,7 +105,11 @@ export function DepthParallax({ plateSrc, depthSrc, className, onReady, onFallba
         texture(gl, 1, depth);
         gl.uniform1i(gl.getUniformLocation(program, 'u_plate'), 0);
         gl.uniform1i(gl.getUniformLocation(program, 'u_depth'), 1);
-        glRef.current = { gl, offset: gl.getUniformLocation(program, 'u_offset')! };
+        glRef.current = {
+          gl,
+          offset: gl.getUniformLocation(program, 'u_offset')!,
+          scale: gl.getUniformLocation(program, 'u_scale')!,
+        };
         setReady(true);
       } catch {
         if (!cancelled) onFallback();
@@ -123,9 +128,10 @@ export function DepthParallax({ plateSrc, depthSrc, className, onReady, onFallba
   useEffect(() => {
     const ctx = glRef.current;
     if (!ready || !ctx) return;
-    const [x, y] = parallaxOffset(frame);
+    const [x, y, scale] = parallaxOffset(frame);
     ctx.gl.viewport(0, 0, WIDTH, HEIGHT);
     ctx.gl.uniform2f(ctx.offset, x, y);
+    ctx.gl.uniform1f(ctx.scale, scale);
     ctx.gl.drawArrays(ctx.gl.TRIANGLE_STRIP, 0, 4);
     onReady?.();
   }, [frame, ready, onReady]);

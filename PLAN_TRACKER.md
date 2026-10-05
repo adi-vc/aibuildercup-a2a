@@ -56,7 +56,7 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 
 ## Current task
 
-**T6 (P7.5 play-log + receipt) is `DONE`.** T7 (P6 client gesture scrubbing) is next. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
+**Nothing in flight.** T7 (P6 edges + scrubbing, placeholder clips) is `DONE`; T6 (P7.5) is `DONE`. Next is credential-bound (P7 guard, P4 Vault) or P8 accessibility. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
 
 ## Task log
 
@@ -373,3 +373,62 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 - **Navigation flushes too.** Leaving the player page flushes its in-progress play, so a viewer who opens the embed after the player leaves two records. Correct per "every play leaves a receipt".
 
 **Blockers / follow-ups:** T7 (P6 client gesture scrubbing) is next. P7 (guard) needs Gemini credentials for its primary path.
+
+### T7 — Transition edges + gesture scrubbing (no Veo)   ·   P6 / F13◐ F14 F18
+- Status: DONE (clips are placeholders; Veo swap pending credentials)
+- Dates: opened 2026-10-06 · GO 2026-10-06 (user: "do the next tasks") · updated 2026-10-06
+- Goal: §64.8 criteria, using **placeholder clips**: Veo needs credentials, so the clip *source* is a deterministic camera move over the placeholder plate, but the encoding, checks and runtime are the real ones.
+
+**Exit criteria:**
+1. ✅ **≥ 2 clips.** `clip_flood_to_spec` (3.0 s, 72 frames) and `clip_range_to_offer` (2.5 s, 60 frames), 260 KB and 196 KB.
+2. ✅ **Every frame `pict_type=I`, zero B.** `tests/test_encode.py` runs in CI (Cloud Build installs `requirements-dev.txt`, which now includes `imageio-ffmpeg`). The checker is itself tested: it **fails** an ordinary GOP encode.
+3. ✅ **`duration_s × fps == frame_count`.** Asserted for both clips.
+4. ✅ **Drag scrubs forward and backward.**
+   - Real pointer drag in Chromium: clip time 0.23 → 1.23 s going up, 0.97 → 0.50 s coming back.
+   - Seek latency (432 frame-step seeks): **all-intra p95 2.6 ms, backward p95 2.6 ms**, vs **7.9 ms** for the same clip as a normal GOP (2 I / 38 P / 32 B). That's well inside the 16.7 ms budget for 60 fps.
+   - ⚠️ Still to check by hand: "60 fps on the demo laptop" with a real finger/trackpad. Headless measurements can't prove frame pacing.
+5. ✅ **Release before 0.8 scrubs back without committing.** It returns to `b_flood` at the frame the viewer left, with the playhead and play state restored. Past 0.8 it commits into `b_spec_overlay`.
+6. ✅ **No seam at either join.**
+   - Measured: frame 0 vs hold A's plate is **52.9 / 54.0 dB PSNR**; last frame vs hold B's derived plate is **47.0 / 49.2 dB** (test threshold 35 dB).
+   - The runtime side is exact by design: holds now start and end on their **hinge frame** (motion envelope `sin(π·t)`, 0 at both ends; unit-tested), so a hold's last frame is the raw plate.
+   - Not frame-by-frame eyeballed at the join on the demo laptop yet.
+
+**Schema decision (user-approved 2026-10-06):** optional, additive `beat.branch_only`; schema stays 1.0.
+- **INV-17:** every branch_only beat is an edge target.
+- **INV-18:** every non-empty `edge.clip` is a vault clip asset.
+
+**Done / changed:**
+- **Backend:**
+  - `pipeline/encode.py`: all-intra encoder (`-g 1 -bf 0`), plus a `frame_types` / `verify_all_intra` checker built on showinfo (no ffprobe needed), `join_psnr` and `extract_frame`.
+  - `pipeline/placeholder_clips.py`: two recipes; clips are conditioned on hold A's plate, and hold B's plate is **derived from the clip's last frame** (§39.3).
+    - Content-addressed: one changed recipe re-encoded only that clip, a rerun encodes **0**, and superseded files are pruned.
+    - The registry is `placeholder_vault.json`.
+  - Planner: the placeholder plate is now a raster PNG (rendered once from the SVG); adds `b_spec_overlay` (branch_only; wading, clearance, charge) and edges `e_flood_spec` (drag_up, reversible) and `e_range_offer` (click), with clip assets and derived target plates.
+  - Linter: INV-17 and INV-18.
+  - **133/133 backend tests pass.**
+- **Frontend:**
+  - `runtime/path.ts`: spine (non-branch beats + auto-edge clips), `branchPath`, timeline, segment lookup, `posterFrame`.
+  - `runtime/scrub.ts`: drag→progress, edge frame, commit at 0.8, easing.
+  - `timeline.ts`: hinge-neutral `holdMotion`, Ken Burns and parallax offsets. `DepthParallax` takes an overscan uniform.
+  - The composition plays the path: an `EdgeClip` (`Html5Video`) whose source copy fades over the first quarter, which becomes a cut to the target plate below `low` tier or under reduced motion. Branch beats render a spec panel of published facts.
+  - `RuntimePlayer`: affordance pills (§58); drag-up scrub with pointer capture; hover-preview (600 ms) / leave / click-commit; restore on cancel.
+  - **38/38 vitest**; `tsc`, `eslint` and the build are clean.
+
+**Bug found and fixed during verification:** a hover preview unmounted its own pill. The ease animation seeked before React rendered the branched path, and the frame listener, holding a stale timeline, mapped the frame to the wrong segment and moved the hold index. With the pill gone, `pointerleave` never fired and the preview stuck at the clip end. Fixes:
+- Frame mapping reads the latest timeline from a ref.
+- The hold index is frozen while a gesture is in flight.
+- Gesture seeks wait for a `ready` flag set when the branched path's pending seek lands.
+
+A click is also marked `committing`, so a quick pointer-leave can't cancel it.
+
+**Couldn't do / shortcuts:**
+- **Clips are placeholders**, not Veo (§37.3): an ffmpeg camera move, with no product consistency to judge. The swap changes bytes only; ids, edges and the derived-plate rule stay.
+- **Mid-hold jump:** a drag starting mid-hold jumps from the hold's current pose (≤ 6 % zoom / ≤ 2 % drift) to the clip's hinge frame. Endpoint joins are exact.
+- **Reverse edge not built:** there's no drag-down from the spec sheet back to the flood beat. `reversible` is in the manifest, unused.
+- **Branch stays in the path:** a committed branch stays in the path across loops.
+- **Unlabelled badges:** the spec panel's three badges don't say which fact each one is.
+
+**Follow-ups:**
+- When Veo exists: replace `placeholder_clips` recipes with the image-conditioned generator, keeping encode/verify/derive.
+- The Cloud Run encode job's image will need ffmpeg (apt). The API image doesn't encode.
+- Remaining build order: **P7** (claim guard, needs Gemini), **P4** (Vault, needs Gemini Image/TTS), **P8** accessibility, **P9** evals/deck. The next credential-free item is P8 (captions/audio-description track); P7 has a planned keyword-rules fallback (§32.1 #11) but its primary path needs Gemini.

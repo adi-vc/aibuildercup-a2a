@@ -18,11 +18,13 @@ from typing import Any
 from app.config import settings
 from app.models.brain import BrainRun, Fact, GatePlanPayload, PlanRun
 from app.services import brain_store
+from app.pipeline.placeholder_clips import load_registry
 from manifest_schema.linter import ManifestLinter
 
 
 LOCALES = ["en-IN", "hi-IN"]
-PLACEHOLDER_URI = "/assets/placeholder_flood_street.svg"
+# Raster placeholder: transition clips are built from these exact pixels (§39.3).
+PLACEHOLDER_URI = "/assets/placeholder_flood_street.png"
 # Placeholders are content-addressed stand-ins too (§66.2 rule 3): P4 swaps in
 # real plates and depth maps without any runtime change.
 PLACEHOLDER_DEPTH_URI = "/assets/placeholder_flood_street_depth.svg"
@@ -60,13 +62,14 @@ def _text_slots(en: str, hi: str) -> dict[str, str]:
 
 def _beat(
     beat_id: str, fact_ids: list[str], text: dict[str, str], *, bindings: list[str] | None = None,
-    mood: bool = False,
+    mood: bool = False, branch_only: bool = False,
 ) -> dict[str, Any]:
     """One hold beat with a P4-replaceable planned plate reference."""
     return {
         "id": beat_id,
         "kind": "hold",
         "mood": mood,
+        **({"branch_only": True} if branch_only else {}),
         "fact_ids": fact_ids,
         "vault_refs": [f"plate_{beat_id[2:]}"],
         "text_slots": text,
@@ -75,6 +78,54 @@ def _beat(
         "hinge": {"in": "wide_neutral", "out": "wide_neutral"},
         "edges": [],
     }
+
+
+# The two §18 hero edges with placeholder clips (P6). Veo replaces only the clip
+# bytes; ids, triggers and the derived-plate rule stay.
+EDGE_SPECS = [
+    {"id": "e_flood_spec", "from": "b_flood", "to": "b_spec_overlay", "clip_name": "clip_flood_to_spec",
+     "trigger": "drag_up", "reversible": True, "label": "Show me the spec sheet"},
+    {"id": "e_range_offer", "from": "b_range", "to": "b_offer", "clip_name": "clip_range_to_offer",
+     "trigger": "click", "reversible": False, "label": "See the price in your city"},
+]
+
+
+def _transition_edges(beats: list[dict[str, Any]]) -> tuple[list[dict], dict[str, dict], dict[str, dict]]:
+    """
+    Add the hero edges whose placeholder clips exist: the edge, its clip asset,
+    and the target plate derived from the clip's last frame. The spec-sheet
+    branch beat is added only alongside its edge, so it is never unreachable.
+    """
+    clips = load_registry().get("clips", {})
+    by_id = {b["id"]: b for b in beats}
+    edges: list[dict] = []
+    clip_assets: dict[str, dict] = {}
+    derived: dict[str, dict] = {}
+    for spec in EDGE_SPECS:
+        clip = clips.get(spec["clip_name"])
+        if not clip:
+            continue
+        if spec["to"] == "b_spec_overlay" and "b_spec_overlay" not in by_id:
+            branch = _beat("b_spec_overlay", ["f_wading_depth", "f_ground_clearance", "f_charge_time"],
+                           _text_slots("From the spec sheet.", "स्पेक शीट से।"), branch_only=True)
+            beats.append(branch)
+            by_id[branch["id"]] = branch
+        edges.append({
+            "id": spec["id"], "from": spec["from"], "to": spec["to"], "clip": clip["asset_id"],
+            "trigger": spec["trigger"], "reversible": spec["reversible"],
+            "duration_s": clip["duration_s"], "label": spec["label"],
+        })
+        by_id[spec["from"]]["edges"].append(spec["id"])
+        clip_assets[clip["asset_id"]] = {
+            "kind": "clip", "uri": clip["uri"], "poster_uri": clip["from_plate_uri"], "depth_uri": "",
+            "fact_ids": [], "model": "placeholder-ffmpeg", "seed": 0, "bible_version": "pending-p4",
+        }
+        target_plate = by_id[spec["to"]]["vault_refs"][0]
+        derived[target_plate] = {
+            "uri": clip["derived_plate"]["uri"], "poster_uri": clip["derived_plate"]["uri"], "depth_uri": "",
+            "model": "derived-last-frame",
+        }
+    return edges, clip_assets, derived
 
 
 def _manifest_from_facts(
@@ -101,15 +152,19 @@ def _manifest_from_facts(
         _beat("b_offer", ["offer_price_mumbai", "offer_price_bengaluru"], _text_slots("On-road in your city:", "आपके शहर में:"), bindings=["price"]),
         _beat("b_warranty", ["warranty"], _text_slots("3 years or 30,000 km battery warranty.", "3 साल या 30,000 किमी बैटरी वारंटी।")),
     ]
+    edges, clip_assets, derived_plates = _transition_edges(beats)
     cited_fact_ids = sorted({fid for beat in beats for fid in beat["fact_ids"]})
     vault = {
         ref: {
             "kind": "plate", "uri": PLACEHOLDER_URI, "poster_uri": PLACEHOLDER_URI,
             "depth_uri": PLACEHOLDER_DEPTH_URI, "fact_ids": beat["fact_ids"], "model": "planned-p3",
             "seed": 0, "bible_version": "pending-p4",
+            # A plate derived from a clip's last frame replaces the shared placeholder (§39.3).
+            **derived_plates.get(ref, {}),
         }
         for beat in beats for ref in beat["vault_refs"]
     }
+    vault.update(clip_assets)
     beat_index = {fid: [b["id"] for b in beats if fid in b["fact_ids"]] for fid in cited_fact_ids}
     asset_index = {
         fid: [ref for b in beats if fid in b["fact_ids"] for ref in b["vault_refs"]]
@@ -123,7 +178,7 @@ def _manifest_from_facts(
     return {
         "manifest_id": f"m_{source_id}_{suffix}", "schema_version": "1.0",
         "brain_version": brain_run.id, "bitgraph_version": f"bg_{brain_run.id[-8:]}",
-        "locales": LOCALES, "beats": beats, "edges": [], "slots": slots,
+        "locales": LOCALES, "beats": beats, "edges": edges, "slots": slots,
         "bindings": [{"key": "price", "resolver": "offer.by_city", "ttl_s": 300}],
         "accessibility": {"captions": True, "audio_description": True},
         "policy": {"kids_mode": kids_mode, "competitor_exclusions": ["brand_x"]},

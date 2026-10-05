@@ -411,6 +411,42 @@ def test_schema_published_fact_requires_quote():
     assert _has(ManifestLinter(m).run(), "SCHEMA")
 
 
+# ── INV-17 / INV-18: branch beats reachable, edge clips are clip assets ──────
+
+def _with_branch(edge: bool = True, clip_kind: str = "clip") -> dict:
+    m = copy.deepcopy(VALID_MANIFEST)
+    branch = copy.deepcopy(m["beats"][0])
+    branch.update(id="b_spec", branch_only=True)
+    m["beats"].append(branch)
+    m["integrity"]["beat_index"]["f_wading_depth"].append("b_spec")
+    m["vault"]["clip_x"] = {**m["vault"]["plate_flood"], "kind": clip_kind, "uri": "/assets/clip.mp4"}
+    if edge:
+        m["edges"].append({"id": "e_x", "from": "b_flood", "to": "b_spec", "clip": "clip_x", "trigger": "drag_up",
+                           "reversible": True, "duration_s": 3.0, "label": "Spec"})
+        m["beats"][0]["edges"] = ["e_x"]
+    return m
+
+
+def test_inv17_reachable_branch_beat_is_valid():
+    assert ManifestLinter(_with_branch()).run() == []
+
+
+def test_inv17_unreachable_branch_beat_fails():
+    assert _has(ManifestLinter(_with_branch(edge=False)).run(), "INV-17")
+
+
+def test_inv18_edge_clip_must_be_a_clip_asset():
+    assert _has(ManifestLinter(_with_branch(clip_kind="plate")).run(), "INV-18")
+
+
+def test_inv18_missing_clip_fails_and_empty_clip_is_a_cut():
+    m = _with_branch()
+    m["edges"][0]["clip"] = "clip_missing"
+    assert _has(ManifestLinter(m).run(), "INV-18")
+    m["edges"][0]["clip"] = ""
+    assert not _has(ManifestLinter(m).run(), "INV-18")
+
+
 # ── Schema-level structural violations ───────────────────────────────────────
 
 def test_schema_missing_required_top_level_field():
