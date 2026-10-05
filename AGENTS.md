@@ -4,6 +4,8 @@ A portable, tool- and model-agnostic orientation for anyone — human or AI agen
 
 **Read order:** this file → [`vachan-plan.md`](vachan-plan.md) (the full plan) → [`PLAN_TRACKER.md`](PLAN_TRACKER.md) (what's been done / how work proceeds).
 
+**Picking the build up mid-way?** Start with [`HANDOFF.md`](HANDOFF.md): current status, how to run it, and what remains.
+
 ---
 
 ## 1. What you're building
