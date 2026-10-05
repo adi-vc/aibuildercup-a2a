@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     live_offer_feed: dict[str, int] = {"mumbai": 129900, "bengaluru": 127400}
     bindings_fail: bool = False
 
+    # ── Play-log (§39.10) ─────────────────────────────────────────────────────────
+    # HMAC key for signing play records. In production inject it from Secret
+    # Manager as a Cloud Run secret env var; never commit it or put it in VITE_*.
+    playlog_hmac_key: str = ""
+
     # ── App ──────────────────────────────────────────────────────────────────────
     app_version: str = "0.1.0-p1"
 

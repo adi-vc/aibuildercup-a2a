@@ -7,6 +7,8 @@ Collections (vachan-plan.md §36):
   entities/{entity_id}                Entity records
   facts/{fact_id}                     Fact records
   brain_runs/{run_id}                 BrainRun (pipeline state / gate tracker)
+  plays/{play_id}                     signed play records (§36, P7.5)
+  playlog_heads/{manifest_id}         {seq, hash} of each manifest's chain head
 
 Indexes written at publish time (vachan-plan.md §24):
   subject → fact_ids:  facts(subject, origin) — stored as subcollection or
@@ -22,7 +24,8 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+import threading
+from typing import Any, Callable
 
 from app.config import settings
 from app.models.brain import BrainRun, Entity, Fact, Span, Source, BrainResult
@@ -43,6 +46,9 @@ class _MemoryStore:
         self._runs: dict[str, dict] = {}
         self._plan_runs: dict[str, dict] = {}
         self._manifests: dict[str, dict] = {}
+        self._plays: dict[str, dict] = {}
+        self._heads: dict[str, dict] = {}                 # manifest_id → {seq, hash}
+        self._chain_lock = threading.Lock()
 
     # ── Sources ────────────────────────────────────────────────────────────────
     def save_source(self, source: Source) -> None:
@@ -118,6 +124,22 @@ class _MemoryStore:
 
     def get_manifest(self, manifest_id: str) -> dict | None:
         return self._manifests.get(manifest_id)
+
+    # ── Play-log chain ─────────────────────────────────────────────────────────
+    def append_play(self, manifest_id: str, seal: Callable[[int, str | None], tuple[dict, str]]) -> dict:
+        """Atomically read the chain head, seal the next record against it, advance the head."""
+        with self._chain_lock:
+            head = self._heads.get(manifest_id)
+            record, record_hash = seal(head["seq"] if head else 0, head["hash"] if head else None)
+            self._plays[record["play_id"]] = record
+            self._heads[manifest_id] = {"seq": record["seq"] + 1, "hash": record_hash}
+            return record
+
+    def get_play(self, play_id: str) -> dict | None:
+        return self._plays.get(play_id)
+
+    def get_plays_by_manifest(self, manifest_id: str) -> list[dict]:
+        return sorted((r for r in self._plays.values() if r["manifest_id"] == manifest_id), key=lambda r: r["seq"])
 
 
 # ── Firestore backend ─────────────────────────────────────────────────────────
@@ -246,6 +268,32 @@ class _FirestoreStore:
     def get_manifest(self, manifest_id: str) -> dict | None:
         doc = self._db.collection("manifests").document(manifest_id).get()
         return doc.to_dict() if doc.exists else None
+
+    # ── Play-log chain ─────────────────────────────────────────────────────────
+    def append_play(self, manifest_id: str, seal: Callable[[int, str | None], tuple[dict, str]]) -> dict:
+        """Head read + record write + head advance in one transaction, so concurrent plays never fork the chain."""
+        from google.cloud import firestore
+
+        head_ref = self._db.collection("playlog_heads").document(manifest_id)
+
+        @firestore.transactional
+        def _append(tx):  # type: ignore[no-untyped-def]
+            snap = head_ref.get(transaction=tx)
+            head = snap.to_dict() if snap.exists else None
+            record, record_hash = seal(head["seq"] if head else 0, head["hash"] if head else None)
+            tx.set(self._db.collection("plays").document(record["play_id"]), record)
+            tx.set(head_ref, {"seq": record["seq"] + 1, "hash": record_hash})
+            return record
+
+        return _append(self._db.transaction())
+
+    def get_play(self, play_id: str) -> dict | None:
+        doc = self._db.collection("plays").document(play_id).get()
+        return doc.to_dict() if doc.exists else None
+
+    def get_plays_by_manifest(self, manifest_id: str) -> list[dict]:
+        docs = self._db.collection("plays").where("manifest_id", "==", manifest_id).stream()
+        return sorted((d.to_dict() for d in docs), key=lambda r: r["seq"])
 
 
 # ── Store factory ─────────────────────────────────────────────────────────────

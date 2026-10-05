@@ -4,14 +4,14 @@
  * full player page and the chromeless embed so both play identically.
  */
 
-import { Player } from '@remotion/player';
-import { useEffect, useState } from 'react';
+import { Player, type PlayerRef } from '@remotion/player';
+import { useEffect, useRef, useState } from 'react';
 import type { Manifest } from '../types/manifest';
 import type { BindingResolution } from '../runtime/bindings';
 import { VachanComposition } from '../runtime/composition';
 import { prefetchPlates } from '../runtime/prefetch';
 import { readEnvironment } from '../runtime/tier';
-import { beatPosterFrame, durationFor, FPS, HEIGHT, WIDTH } from '../runtime/timeline';
+import { beatPosterFrame, durationFor, FPS, HEIGHT, HOLD_FRAMES, WIDTH } from '../runtime/timeline';
 
 interface Props {
   manifest: Manifest;
@@ -20,11 +20,35 @@ interface Props {
   entryBeat?: string;
   autoPlay?: boolean;
   style?: React.CSSProperties;
+  /** Called with the beat on screen whenever it changes (the play-log's clock). */
+  onBeatChange?: (beatId: string) => void;
 }
 
-export function RuntimePlayer({ manifest, locale, bindings, entryBeat, autoPlay = false, style }: Props) {
+export function RuntimePlayer({ manifest, locale, bindings, entryBeat, autoPlay = false, style, onBeatChange }: Props) {
   const [env] = useState(() => readEnvironment(window.location.search));
   const entry = entryBeat ?? manifest.beats[0]?.id ?? '';
+  const playerRef = useRef<PlayerRef>(null);
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player || !onBeatChange) return;
+    let current = '';
+    const report = (frame: number) => {
+      const beat = manifest.beats[Math.min(manifest.beats.length - 1, Math.floor(frame / HOLD_FRAMES))];
+      if (beat && beat.id !== current) {
+        current = beat.id;
+        onBeatChange(beat.id);
+      }
+    };
+    report(player.getCurrentFrame());
+    const onFrame = (e: { detail: { frame: number } }) => report(e.detail.frame);
+    player.addEventListener('frameupdate', onFrame);
+    player.addEventListener('seeked', onFrame);
+    return () => {
+      player.removeEventListener('frameupdate', onFrame);
+      player.removeEventListener('seeked', onFrame);
+    };
+  }, [manifest, entry, onBeatChange]);
 
   useEffect(() => {
     prefetchPlates(manifest, entry, env.tier, env.viewer);
@@ -34,6 +58,7 @@ export function RuntimePlayer({ manifest, locale, bindings, entryBeat, autoPlay 
     <Player
       // Remount only when the entry beat changes; locale/city swaps keep the playhead.
       key={entry}
+      ref={playerRef}
       component={VachanComposition}
       inputProps={{ manifest, locale, bindings, env }}
       durationInFrames={durationFor(manifest)}

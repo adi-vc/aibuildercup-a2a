@@ -10,6 +10,7 @@ Services:
   GET   /v1/gates/{run_id}/status   run status poll (P1)
   GET   /v1/manifest/{id}       serve a manifest (fixture in P0, CDN in P5+)
   POST  /v1/bindings/resolve    play-time binding values, e.g. price by city (P5)
+  POST  /v1/playlog             sign + chain a play record; GET …/{id}, …/chain/{manifest} (P7.5)
   GET   /healthz                Cloud Run health probe
 
 Run locally:
@@ -20,7 +21,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import sources, manifest, brain, gates, plans, bindings
+from app.routers import sources, manifest, brain, gates, plans, bindings, playlog
 
 app = FastAPI(
     title="Vachan API",
@@ -51,6 +52,7 @@ app.include_router(brain.router)
 app.include_router(gates.router)
 app.include_router(plans.router)
 app.include_router(bindings.router)
+app.include_router(playlog.router)
 
 
 # ── Health probe ──────────────────────────────────────────────────────────────

@@ -29,17 +29,22 @@ def manifest_etag(data: dict) -> str:
     return '"' + hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:20] + '"'
 
 
-@router.get("/{manifest_id}")
-async def get_manifest(manifest_id: str, if_none_match: str | None = Header(default=None)) -> Response:
-    """Return a manifest by id, or 304 when the caller's ETag is current."""
-    # P3 persists linted, Gate-2-reviewed plans here. P5 moves this lookup to
-    # immutable GCS/CDN storage without changing the runtime contract.
+def load_manifest(manifest_id: str) -> dict | None:
+    """The manifest as the player is served it: the store first, then fixtures."""
     data = get_store().get_manifest(manifest_id)
     if data is None:
         fixture_path = FIXTURES_DIR / f"{manifest_id}.json"
-        if not fixture_path.exists():
-            raise HTTPException(status_code=404, detail=f"Manifest '{manifest_id}' not found.")
-        data = json.loads(fixture_path.read_text())
+        if fixture_path.exists():
+            data = json.loads(fixture_path.read_text())
+    return data
+
+
+@router.get("/{manifest_id}")
+async def get_manifest(manifest_id: str, if_none_match: str | None = Header(default=None)) -> Response:
+    """Return a manifest by id, or 304 when the caller's ETag is current."""
+    data = load_manifest(manifest_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"Manifest '{manifest_id}' not found.")
     etag = manifest_etag(data)
     headers = {
         "Cache-Control": "no-cache",

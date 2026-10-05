@@ -20,7 +20,7 @@ const MANIFEST_ID = urlParams.get('manifest') ?? 'p0_single_beat';
 const SHOW_VARIANTS = urlParams.get('variants') === '1';
 
 export default function App() {
-  const { manifest, loading, error } = useManifest(MANIFEST_ID);
+  const { manifest, version, loading, error } = useManifest(MANIFEST_ID);
   const [profile, setProfile] = useState<ViewerProfile>(DEFAULT_PROFILE);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function App() {
         {manifest && (SHOW_VARIANTS ? (
           <VariantGrid manifest={manifest} />
         ) : (
-          <BeatPlayer manifest={manifest} profile={profile} onProfileChange={setProfile} />
+          <BeatPlayer manifest={manifest} version={version} profile={profile} onProfileChange={setProfile} />
         ))}
       </main>
     </div>

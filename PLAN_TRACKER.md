@@ -56,7 +56,7 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 
 ## Current task
 
-**Nothing in flight.** T5a and T5b are `DONE` — P5 (runtime, swap, embed) is complete locally; next task to be proposed. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
+**T6 (P7.5 play-log + receipt) is `DONE`.** T7 (P6 client gesture scrubbing) is next. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
 
 ## Task log
 
@@ -325,3 +325,51 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
   - **P6** client side: gesture scrubbing (needs clips from P4/P6-A, or placeholder clips).
   - **P7.5** play-log + receipt: B-side; the binding `{rung, source}` records from T5a feed it directly.
   - **P4** Vault, once Gemini/GCP credentials exist.
+
+### T6 — Play-log + receipt   ·   P7.5 / F23
+- Status: DONE
+- Dates: opened 2026-10-06 · GO 2026-10-06 (user: "do the next tasks") · updated 2026-10-06
+- Goal: §64.10 exit criteria:
+  1. The record matches what was on screen: claims, price shown, locale, refusal count.
+  2. The signature verifies.
+  3. The chain verifies across three consecutive plays.
+  4. Tampering with any one field fails verification (a test).
+
+**Exit criteria — all met:**
+1. ✅ **The record is what was on screen.**
+   - The player appends a segment whenever the visible screen changes: beat, locale, city, badged claims, binding display/rung/provenance.
+   - In the browser, one play recorded b_offer en/Mumbai → en/Bengaluru → hi/Bengaluru → b_warranty. Each segment carries its claims, price and provenance; the receipt shows refusals 0 (P7 adds them).
+   - The server **refuses to sign** a screen the manifest can't produce (7 parametrised cases), a stale manifest version (409), and unknown fields such as a PII-carrying `viewer_email` (422).
+2. ✅ **The signature verifies.** HMAC-SHA256 over canonical JSON, checked via the API and in the receipt ("✓ verifies").
+3. ✅ **The chain verifies.** Three consecutive plays chain (test); in the browser, "✓ 4 plays chained", later 6 including embed flushes. Dropping or editing a stored record breaks the chain at that record and the next.
+4. ✅ **Tampering fails.** It is parametrised over 10 fields: price shown, rung, claim, locale, refusal count, beat order, manifest version, seq, prev_hash, signature. The receipt's "Try tampering" edits a copy and shows "✓ altered copy rejected".
+
+**Done / changed:**
+- **Backend:**
+  - `services/playlog.py`: record schema (`extra=forbid`), canonical JSON, sign/verify, `seal`, `validate_against_manifest`, `verify_chain`.
+  - Brain store: `append_play` is atomic (a lock in memory, a Firestore transaction on `playlog_heads/{manifest_id}`), plus `get_play` and `get_plays_by_manifest`.
+  - `routers/playlog.py`: `POST /v1/playlog` (accepts `text/plain` for keepalive), `POST /v1/playlog/verify`, `GET /v1/playlog/chain/{manifest_id}`, `GET /v1/playlog/{play_id}`.
+  - `routers/manifest.py`: `load_manifest()` factored out, so signing validates against exactly what the player is served.
+  - `config.playlog_hmac_key`. Local dev uses an ephemeral key; any other environment returns 503 rather than sign with no key.
+  - 28 new tests. **121/121 backend tests pass.**
+- **Frontend:**
+  - `runtime/claims.ts`: shared "what is badged" logic, so the badges and the receipt can't disagree.
+  - `runtime/playlog.ts`: `PlayRecorder`, segments, `profileHash` (coarse profile, no PII).
+  - `runtime/usePlayLog.ts`: page-hide keepalive flush; `submit()` starts the next play.
+  - `RuntimePlayer.onBeatChange`: from Remotion `frameupdate`/`seeked`.
+  - `useManifest` returns the ETag `version`. The client gets `submitPlay`, `verifyPlay` and `fetchChain`.
+  - `Receipt` + CSS. The player gets "End play & view receipt"; the embed logs plays on page hide.
+  - **29/29 vitest**; `tsc`, `eslint` and the build are clean.
+
+**Bug found and fixed during verification:** the first browser run lost every screen before a locale/city swap. The recorder was keyed on the profile hash, which includes locale and city, so each swap started a new play. Now there's one recorder per manifest version, and the hash is pinned from the profile the play started with. A regression test covers it.
+
+**Couldn't do / shortcuts:**
+- **Firestore path not run.** The transactional append is written but untested (no Firestore/emulator, same as T2).
+- **Questions/refusals are empty until P7.** The guard will append `{type}` refusals; the fields are already signed.
+- **Live prices are attested as received.** Rung 1/2 values are checked for resolver and shape; the server doesn't re-query the feed at signing time.
+
+**Alternative found / observations:**
+- **Flicker on load and city swap.** The live price arrives a few hundred ms after first paint, so the screen briefly shows the published fact (rung 3) before the live value (rung 1). The receipt records both, faithfully. That's the ladder's "never wait on the network" rule. Possible UX refinement: hold the price for ≤300 ms while a first fetch is in flight. Logged; not changed.
+- **Navigation flushes too.** Leaving the player page flushes its in-progress play, so a viewer who opens the embed after the player leaves two records. Correct per "every play leaves a receipt".
+
+**Blockers / follow-ups:** T7 (P6 client gesture scrubbing) is next. P7 (guard) needs Gemini credentials for its primary path.

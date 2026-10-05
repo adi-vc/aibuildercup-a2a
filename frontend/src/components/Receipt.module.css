@@ -1,0 +1,87 @@
+/* Receipt.module.css — one screen, readable at slide distance. */
+
+.receipt {
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: #141414;
+  color: #ddd;
+  padding: 16px 18px;
+  font-size: 13px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.head h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #fff;
+}
+
+.close {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: #888;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.grid h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #999;
+}
+
+.grid ul {
+  margin: 0;
+  padding-left: 16px;
+  line-height: 1.5;
+}
+
+.grid small {
+  display: block;
+  color: #888;
+  font-size: 11px;
+}
+
+.muted {
+  color: #777;
+  margin: 0;
+}
+
+.integrity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  border-top: 1px dashed #333;
+  padding-top: 12px;
+  font-size: 12px;
+}
+
+.integrity button {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #262626;
+  color: #f0f0f0;
+  cursor: pointer;
+}
+
+.ok { color: #7ee07e; }
+.bad { color: #ff7676; }

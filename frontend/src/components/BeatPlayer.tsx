@@ -9,6 +9,9 @@
 
 import type React from 'react';
 import { useState } from 'react';
+import { usePlayLog } from '../runtime/usePlayLog';
+import type { SignedPlayRecord } from '../runtime/playlog';
+import { Receipt } from './Receipt';
 import type { Manifest, ViewerProfile } from '../types/manifest';
 import { CITIES } from '../runtime/profile';
 import { useBindings } from '../runtime/useBindings';
@@ -19,6 +22,8 @@ import styles from './BeatPlayer.module.css';
 
 interface Props {
   manifest: Manifest;
+  /** Content version (ETag) of the manifest — the play-log cites it. */
+  version: string;
   profile: ViewerProfile;
   onProfileChange?: (p: ViewerProfile) => void;
 }
@@ -60,8 +65,20 @@ function EmbedSnippet({ manifestId, profile }: { manifestId: string; profile: Vi
   );
 }
 
-export function BeatPlayer({ manifest, profile, onProfileChange }: Props) {
+export function BeatPlayer({ manifest, version, profile, onProfileChange }: Props) {
   const bindings = useBindings(manifest, profile.city, profile.locale);
+  const playLog = usePlayLog(manifest, version, profile, bindings);
+  const [receipt, setReceipt] = useState<SignedPlayRecord | null>(null);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+
+  const endPlay = async () => {
+    setReceiptError(null);
+    try {
+      setReceipt(await playLog.submit());
+    } catch (e) {
+      setReceiptError(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   if (manifest.beats.length === 0) {
     return <div className={styles.error}>Manifest has no beats. Check the fixture.</div>;
@@ -92,7 +109,13 @@ export function BeatPlayer({ manifest, profile, onProfileChange }: Props) {
       </div>
 
       <div className={styles.stage}>
-        <RuntimePlayer manifest={manifest} locale={profile.locale} bindings={bindings} entryBeat={profile.entry_beat} />
+        <RuntimePlayer
+          manifest={manifest}
+          locale={profile.locale}
+          bindings={bindings}
+          entryBeat={profile.entry_beat}
+          onBeatChange={playLog.onBeatChange}
+        />
       </div>
 
       {Object.values(bindings).length > 0 && (
@@ -104,6 +127,12 @@ export function BeatPlayer({ manifest, profile, onProfileChange }: Props) {
           ))}
         </ul>
       )}
+
+      <div className={styles.receiptBar}>
+        <button type="button" className={styles.copyButton} onClick={endPlay}>End play &amp; view receipt</button>
+        {receiptError && <span className={styles.receiptError}>{receiptError}</span>}
+      </div>
+      {receipt && <Receipt record={receipt} manifest={manifest} onClose={() => setReceipt(null)} />}
 
       <EmbedSnippet manifestId={manifest.manifest_id} profile={profile} />
     </div>

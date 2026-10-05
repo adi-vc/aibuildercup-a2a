@@ -1,8 +1,8 @@
 /**
  * client.ts — thin API client for the Vachan backend.
  *
- * Play-time calls (§35): fetchManifest(), resolveBindings().
- * Later phases add askCharacter(), postPlayLog().
+ * Play-time calls (§35): fetchManifest(), resolveBindings(), submitPlay().
+ * P7 adds askCharacter().
  *
  * The base URL is set from VITE_API_BASE_URL (see .env.example).
  * Falls back to localhost:8080 for local dev so the frontend works without
@@ -11,6 +11,7 @@
 
 import type { Manifest } from '../types/manifest';
 import type { BindingFetcher } from '../runtime/bindings';
+import type { PlayRecord, SignedPlayRecord } from '../runtime/playlog';
 
 const API_BASE =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:8080';
@@ -21,13 +22,22 @@ const API_BASE =
  * In P5+ the player will fetch directly from the CDN URL baked into the embed snippet.
  */
 export async function fetchManifest(manifestId: string): Promise<Manifest> {
+  return (await fetchManifestVersioned(manifestId)).manifest;
+}
+
+/**
+ * The manifest plus its version (the server's content ETag). The play-log
+ * cites the version so a receipt is bound to the exact manifest played.
+ */
+export async function fetchManifestVersioned(manifestId: string): Promise<{ manifest: Manifest; version: string }> {
   const url = `${API_BASE}/v1/manifest/${manifestId}`;
   const resp = await fetch(url);
   if (!resp.ok) {
     const detail = await resp.text().catch(() => resp.statusText);
     throw new Error(`Failed to fetch manifest "${manifestId}": ${resp.status} ${detail}`);
   }
-  return resp.json() as Promise<Manifest>;
+  const version = (resp.headers.get('ETag') ?? '').replace(/^W\//, '').replaceAll('"', '');
+  return { manifest: (await resp.json()) as Manifest, version };
 }
 
 /**
@@ -70,3 +80,46 @@ export const resolveBindings: BindingFetcher = async (keys, city) => {
   if (!resp.ok) throw new Error(`Binding resolver failed: ${resp.status}`);
   return resp.json();
 };
+
+/**
+ * POST /v1/playlog — the server validates, signs and chains the record.
+ * `keepalive` is for page hide: a text/plain body avoids a CORS preflight the
+ * closing page might not survive, and the request outlives the page.
+ */
+export async function submitPlay(record: PlayRecord, { keepalive = false } = {}): Promise<SignedPlayRecord> {
+  const resp = await fetch(`${API_BASE}/v1/playlog`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: JSON.stringify(record),
+    keepalive,
+  });
+  if (!resp.ok) {
+    const detail = await resp.text().catch(() => resp.statusText);
+    throw new Error(`Play record rejected: ${resp.status} ${detail}`);
+  }
+  return resp.json();
+}
+
+/** POST /v1/playlog/verify — recompute the signature over exactly these fields. */
+export async function verifyPlay(record: unknown): Promise<boolean> {
+  const resp = await fetch(`${API_BASE}/v1/playlog/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(record),
+  });
+  return resp.ok && (await resp.json()).ok === true;
+}
+
+export interface ChainReport {
+  manifest_id: string;
+  ok: boolean;
+  count: number;
+  failures: { seq: number; play_id: string; reason: string }[];
+}
+
+/** GET /v1/playlog/chain/{manifest_id} — every record of the chain, verified. */
+export async function fetchChain(manifestId: string): Promise<ChainReport> {
+  const resp = await fetch(`${API_BASE}/v1/playlog/chain/${manifestId}`);
+  if (!resp.ok) throw new Error(`Chain check failed: ${resp.status}`);
+  return resp.json();
+}

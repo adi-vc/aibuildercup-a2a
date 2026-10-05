@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AbsoluteFill, Img, interpolate, Sequence, useCurrentFrame } from 'remotion';
 import type { Beat, Manifest } from '../types/manifest';
 import { bindingTag, type BindingResolution } from './bindings';
+import { shownFactIds } from './claims';
 import styles from './composition.module.css';
 import { DepthParallax } from './DepthParallax';
 import { markFirstFrame } from './firstFrame';
@@ -67,17 +68,6 @@ function BindingLine({ resolution, locale }: { resolution: BindingResolution; lo
       {tag && <span className={styles.bindingTag}>{tag}</span>}
     </p>
   );
-}
-
-// ── L4: which facts get a badge ──────────────────────────────────────────────
-
-/** Badges for what is actually claimed on screen. A bound beat cites one fact
- *  per city; only the fallback fact actually shown (rung 3) gets a badge. */
-function shownFactIds(beat: Beat, bindings: Record<string, BindingResolution>): string[] {
-  if (beat.bindings.length === 0) return beat.fact_ids;
-  return beat.bindings
-    .map((key) => bindings[key]?.source)
-    .flatMap((src) => (src?.kind === 'fact' ? [src.fact_id] : []));
 }
 
 // ── L0 + L1 ──────────────────────────────────────────────────────────────────
