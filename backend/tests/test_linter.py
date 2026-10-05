@@ -375,6 +375,42 @@ def test_inv14_mood_beat_with_facts_fails():
     assert _has(violations, "INV-14"), f"Expected INV-14, got {_codes(violations)}"
 
 
+# ── INV-16: optional integrity.facts mirrors fact_index, canon only ──────────
+
+_PUBLISHED = {"value": "30", "unit": "cm", "text": "Wades 30 cm.",
+              "quote": "wades through water up to 30 cm deep", "origin": "canon"}
+
+
+def test_inv16_matching_published_facts_are_valid():
+    m = copy.deepcopy(VALID_MANIFEST)
+    m["integrity"]["facts"] = {"f_wading_depth": dict(_PUBLISHED)}
+    assert ManifestLinter(m).run() == []
+
+
+def test_inv16_missing_published_fact_fails():
+    m = copy.deepcopy(VALID_MANIFEST)
+    m["integrity"]["facts"] = {}
+    assert _has(ManifestLinter(m).run(), "INV-16")
+
+
+def test_inv16_extra_published_fact_fails():
+    m = copy.deepcopy(VALID_MANIFEST)
+    m["integrity"]["facts"] = {"f_wading_depth": dict(_PUBLISHED), "f_uncited": dict(_PUBLISHED)}
+    assert _has(ManifestLinter(m).run(), "INV-16")
+
+
+def test_inv16_non_canon_published_fact_fails():
+    m = copy.deepcopy(VALID_MANIFEST)
+    m["integrity"]["facts"] = {"f_wading_depth": {**_PUBLISHED, "origin": "inferred"}}
+    assert _has(ManifestLinter(m).run(), "INV-16")
+
+
+def test_schema_published_fact_requires_quote():
+    m = copy.deepcopy(VALID_MANIFEST)
+    m["integrity"]["facts"] = {"f_wading_depth": {k: v for k, v in _PUBLISHED.items() if k != "quote"}}
+    assert _has(ManifestLinter(m).run(), "SCHEMA")
+
+
 # ── Schema-level structural violations ───────────────────────────────────────
 
 def test_schema_missing_required_top_level_field():

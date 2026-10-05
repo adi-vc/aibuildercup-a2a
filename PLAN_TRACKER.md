@@ -56,7 +56,7 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 
 ## Current task
 
-**Nothing in flight.** T4.1 (golden-fixture repair) is `DONE`. **T5a — P5 runtime + swap + bindings ladder is `PROPOSED`**, awaiting `GO`. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
+**Nothing in flight.** T5a (P5 runtime + swap + bindings ladder) is `DONE`; T5b (embed, Service Worker, degradation ladder, parallax) is `PROPOSED`, awaiting `GO`. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
 
 ## Task log
 
@@ -202,30 +202,63 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 **Blockers / follow-ups:** `frontend/package-lock.json` will be committed with T5a's first `npm install`.
 
 ### T5a — Runtime, multi-beat playback, locale/city swap, bindings ladder   ·   P5 (part 1) / F17 F19 F8
-- Status: PROPOSED
-- Dates: opened 2026-10-05 · updated 2026-10-05
-- Goal: The planner's 8-beat manifest (`GET /v1/manifest/m_<source_id>_standard`) plays end to end in a Remotion composition. EN↔HI and Mumbai↔Bengaluru swap at play-time, `price` resolves through the §24.2 ladder, and the network log shows **zero generation calls**. Covers §64.7 criteria 1, 2 and 5; criteria 3–4 belong to T5b.
+- Status: DONE
+- Dates: opened 2026-10-05 · GO 2026-10-05 · updated 2026-10-06
+- Goal: The planner's 8-beat manifest plays end to end in a Remotion composition. Locale and city swap at play-time, `price` resolves through the §24.2 ladder, and the network log shows zero generation calls. Covers §64.7 criteria 1, 2 and 5; criteria 3–4 are T5b.
 
-**Scope:**
+**Exit criteria — verified locally (backend :8080, Vite :5173, Playwright):**
+1. ✅ **Variants render from one manifest.** `?variants=1` renders **48 variants** (12 cities × 2 locales × {standard, kids}); 24 from one manifest, the §76.3 two-locale number.
+   - The 8 Mumbai/Bengaluru cells show rung 1, live.
+   - The 40 cells for cities with no published price show rung-4 neutral wording. No price is invented.
+2. ✅ **Zero generation calls.** The on-page network ledger, built from Resource Timing, lists only `GET /v1/manifest/*`, one plate GET (shared by all 48 variants) and `POST /v1/bindings/resolve`, so it reads **0 generation calls**. Video capture of this happens at P9 dry-run time.
+3. ✅ **Resolver kill (criterion 5).** With `BINDINGS_FAIL=1` (503):
+   - Bengaluru shows **₹1,27,400 "as published"**, badged to `offer_price_bengaluru`; the inspector shows the verbatim span "Bengaluru on-road ₹1,27,400".
+   - Cities with no published fact show neutral wording.
+   - Vitest asserts that every shown number is live or a cited canon fact.
+4. ✅ **Mid-play swap.** Mumbai→Bengaluru rebinds ₹1,29,900→₹1,27,400, and EN→HI swaps the copy and the binding tags. The plate URL is unchanged, and there is no reload.
+
+**Done / changed:**
+- **Schema decision (both builders, in writing — user-approved 2026-10-05):** added an optional `integrity.facts: {fact_id: {value, unit, text, quote, origin}}`.
+  - It is additive and backward-compatible, so the schema stays `1.0`.
+  - Why it's needed: the frozen manifest had no fact values, so the §24.2 rung 3 ("as published") and the P7 inspector quote were impossible without the runtime reading the Brain (forbidden by §66).
+  - New linter **INV-16**: when present, its keys equal `fact_index`, and every entry is `canon`.
+  - The golden fixture carries it.
+- **Planner:** emits `integrity.facts`. The quote is the **stored span text**, and the planner raises if a canon fact's span is missing (never paraphrase). The `b_offer` copy changed to the §18 script ("On-road in your city:" / "आपके शहर में:"), because the old "live when you play" contradicted the "as published" tag at rungs 2–4.
+- **Backend:**
+  - `routers/bindings.py`: `POST /v1/bindings/resolve`, with a config `live_offer_feed` (defaults equal the published prices). Unknown keys and cities are omitted, never guessed. Sends `Cache-Control: no-store`. `BINDINGS_FAIL=1` makes it return 503.
+  - Tests: `tests/test_bindings.py` (4), plus 5 INV-16 linter tests and 1 planner test. **91/91 backend tests pass.**
 - **Frontend:**
-  - Add `remotion` + `@remotion/player`. Remotion's company license is free for teams of ≤3; confirm the team size.
-  - Add `vitest`.
-  - New `src/runtime/` module:
-    - `composition.tsx`: §47 layers, a `<Sequence>` per hold, Ken Burns stand-in for parallax.
-    - `bindings.ts`: a pure 4-rung ladder that returns a `{rung, value, source}` receipt record for P7.5.
-    - `profile.ts`: reads `?profile=`, contains no PII.
-  - `BeatPlayer` → `<Player>`, with a city selector and the P0 debug strip removed.
-  - `resolveBindings()` in `api/client.ts`, with a timeout.
-- **Backend (minimal play-time resolver, §35):**
-  - `POST /v1/bindings/resolve {keys[], city, sku}` → `{values, resolved_at}`, backed by a small config "live offer feed".
-  - A `BINDINGS_FAIL=1` kill switch that returns 503.
-- **Tests:**
-  - Vitest: one test per ladder rung. "Resolver killed" must yield the cited fact or neutral wording, never an uncited number.
-  - Pytest: resolver per city, unknown city, and the kill switch.
-  - Playwright: a network-log capture over a `?variants=1` locale × city × {standard, kids} grid.
-  - Build, typecheck and lint clean.
+  - Added `remotion` and `@remotion/player` 4.0.533, and `vitest`.
+  - `src/runtime/`:
+    - `bindings.ts`: the pure `decideBinding` ladder, the C5 `BindingCache` keyed (resolver, city, sku), and the localised tags. TTL is aged by client receipt time; the server `resolved_at` goes on the receipt.
+    - `composition.tsx` + CSS: §47 layers L0/L1 (Ken Burns)/L3/L4.
+    - `timeline.ts`: shared timing constants.
+    - `profile.ts`: `?profile=`, `?locale=`, `?city=`, `?entry_beat=`, and the 12-city set.
+    - `useBindings.ts`: renders from the cache, revalidates every 15 s.
+  - `BeatPlayer`: uses `<Player>`, adds a city selector and a rung readout, and drops the P0 debug strip.
+  - `VariantGrid`: thumbnails plus the network ledger.
+  - `api/client.ts`: `resolveBindings` with a 1.5 s timeout.
+  - `useManifest`: fixed its pre-existing set-state-in-effect lint error.
+  - **12/12 vitest**; `tsc`, `eslint` and `vite build` are clean.
+  - `package-lock.json` is now committed (T4.1 follow-up).
 
-**Known gap (logged, not solved):** §19 moment 6 swaps the street plate per city, but the frozen schema has **no per-city plate field**. T5a swaps only the price binding. Adding per-city plate variants is a both-builders schema decision (§66.2 rule 1) to take before P4/T5b.
+**Couldn't do / shortcuts:**
+- **Per-city plate swap** (§19 moment 6): still a schema gap, since there's no per-city plate field. Only the price rebinds. This is a both-builders decision before P4/T5b.
+- **Parallax:** Ken Burns stands in for the depth parallax (T5b). There is no TTS selection yet: `audio_slots` are empty until P4.
+- **Network evidence:** captured in-browser (the ledger and Playwright), not yet as a recorded video.
+- **Remotion license:** we pass `acknowledgeRemotionLicense` on the assumption the team is 3 people or fewer, which is free under Remotion's license. Confirm team size before a public demo.
+
+**Alternative found / issues logged:**
+- **Manifest caching vs. mutable ids.** `GET /v1/manifest/{id}` sends `max-age=60`, but rebuilds reuse the same id (`m_<source>_standard`). During verification the browser served a stale manifest for up to 60 s. T5b must version manifest URLs (content hash) before moving to `immutable` (§49 C3).
+- **Console warning (benign).** Chromium rejects `img.decode()` for the P0 SVG placeholder, so Remotion logs an `EncodingError` warning. It then falls back to `onload`, and the plate renders. This disappears with P4's raster plates.
+- **Bundle size.** 173 kB gzipped, mostly Remotion. Watch it against T5b's < 2 s p95 first frame.
+- **Local Python.** Use 3.12 locally (see T4.1).
+
+**Blockers / follow-ups:** T5b (embed, Service Worker, degradation ladder, parallax, first-frame p95, versioned manifest URLs) is next to propose. To reproduce locally:
+1. Run `uvicorn app.main:app --port 8080`.
+2. `POST /v1/brain/build` with `{"source_id":"src_demo","gcs_path":"gs://vachan-vault/sources/src_demo/raw.html"}`. This falls back to the local fixture when GCS is down.
+3. Pass Gate 1, run `/v1/plan/build` for standard and kids, and pass Gate 2.
+4. Open `/?manifest=m_src_demo_standard&entry_beat=b_offer` or `&variants=1`.
 
 ### T5b — Embed, Service Worker, degradation ladder, parallax   ·   P5 (part 2) / F26 F11
 - Status: PROPOSED (detailed when T5a closes)

@@ -1,0 +1,64 @@
+/* VariantGrid.module.css — the metric-3 grid and its network ledger. */
+
+.wrap {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary {
+  margin: 0;
+  font-size: 15px;
+  color: #ccc;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.cell {
+  margin: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #151515;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cell figcaption {
+  padding: 6px 8px;
+  font-size: 11px;
+  color: #999;
+}
+
+.ledger h2 {
+  margin: 8px 0;
+  font-size: 15px;
+  color: #ddd;
+}
+
+.ledger table {
+  border-collapse: collapse;
+  font-size: 12px;
+  color: #bbb;
+}
+
+.ledger th,
+.ledger td {
+  text-align: left;
+  padding: 4px 12px 4px 0;
+  border-bottom: 1px solid #262626;
+}
+
+.bad td {
+  color: #ff6b6b;
+  font-weight: 700;
+}
+
+.note {
+  color: #888;
+  font-size: 13px;
+}

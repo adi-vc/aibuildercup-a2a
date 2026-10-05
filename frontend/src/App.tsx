@@ -1,31 +1,39 @@
 /**
- * App.tsx — P0 root component.
+ * App.tsx — P5 root.
  *
- * Loads the p0_single_beat fixture manifest and renders the BeatPlayer.
- * The manifest ID can be overridden via the ?manifest= query param so
- * teammates can test different fixtures without a code change.
+ *   ?manifest=<id>   which manifest to play (default: the P2 golden fixture)
+ *   ?locale= ?city=  profile overrides; ?profile=<url> loads a profile.json
+ *   ?variants=1      the metric-3 variant grid + network ledger
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useManifest } from './hooks/useManifest';
 import { BeatPlayer } from './components/BeatPlayer';
+import { VariantGrid } from './components/VariantGrid';
 import type { ViewerProfile } from './types/manifest';
 import { DEFAULT_PROFILE } from './types/manifest';
+import { loadProfile } from './runtime/profile';
 import './App.css';
 
-// Read manifest id from query param; default to the P0 fixture.
 const urlParams = new URLSearchParams(window.location.search);
 const MANIFEST_ID = urlParams.get('manifest') ?? 'p0_single_beat';
+const SHOW_VARIANTS = urlParams.get('variants') === '1';
 
 export default function App() {
   const { manifest, loading, error } = useManifest(MANIFEST_ID);
   const [profile, setProfile] = useState<ViewerProfile>(DEFAULT_PROFILE);
 
+  useEffect(() => {
+    loadProfile(window.location.search).then(setProfile);
+  }, []);
+
   return (
     <div className="app">
       <header className="app-header">
-        <h1 className="app-title">Vachan <span className="app-phase">· P0</span></h1>
-        <p className="app-subtitle">Walking skeleton — manifest renders in browser ✓</p>
+        <h1 className="app-title">Vachan <span className="app-phase">· P5</span></h1>
+        <p className="app-subtitle">
+          {SHOW_VARIANTS ? 'One manifest, every viewer — zero generation at play-time' : 'Generated once, composed per viewer'}
+        </p>
       </header>
 
       <main className="app-main">
@@ -43,13 +51,11 @@ export default function App() {
           </div>
         )}
 
-        {manifest && (
-          <BeatPlayer
-            manifest={manifest}
-            profile={profile}
-            onProfileChange={setProfile}
-          />
-        )}
+        {manifest && (SHOW_VARIANTS ? (
+          <VariantGrid manifest={manifest} />
+        ) : (
+          <BeatPlayer manifest={manifest} profile={profile} onProfileChange={setProfile} />
+        ))}
       </main>
     </div>
   );

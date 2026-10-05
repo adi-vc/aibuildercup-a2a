@@ -1,8 +1,7 @@
 /**
  * manifest.ts — TypeScript types that mirror the manifest schema (vachan-plan.md §28).
  *
- * P0: only the fields actually used by the single-beat player are required.
- * P2 will expand this into the full frozen schema with a JSON Schema linter.
+ * Mirrors backend/manifest_schema/manifest.schema.json (frozen at P2, schema 1.0).
  * Builder B owns this file; Builder A's backend emits JSON that must satisfy it.
  */
 
@@ -81,6 +80,16 @@ export interface Binding {
 
 // ── Integrity indexes ────────────────────────────────────────────────────────
 
+/** A cited canon fact as published in the manifest (optional, INV-16). */
+export interface PublishedFact {
+  value: string;
+  unit?: string;
+  text: string;
+  /** Verbatim span text the fact was string-verified against. */
+  quote: string;
+  origin: Origin;
+}
+
 export interface Integrity {
   /** fact_id → span_id (for the badge) */
   fact_index: Record<string, string>;
@@ -90,6 +99,8 @@ export interface Integrity {
   asset_index: Record<string, string[]>;
   coverage: number;
   linted_at: string;
+  /** fact_id → published value + quote; drives §24.2 rung 3 and the inspector. */
+  facts?: Record<string, PublishedFact>;
 }
 
 // ── Policy ───────────────────────────────────────────────────────────────────
@@ -132,6 +143,8 @@ export interface ViewerProfile {
   city: string;
   kids_mode: boolean;
   entry_beat?: string;
+  persona?: string;
+  brand_skin?: string;
 }
 
 export const DEFAULT_PROFILE: ViewerProfile = {

@@ -100,3 +100,16 @@ def test_plan_api_and_gate2_api():
     manifest = client.get(f"/v1/manifest/{data['manifest_id']}")
     assert manifest.status_code == 200
     assert ManifestLinter(manifest.json()).run() == []
+
+
+def test_manifest_publishes_cited_facts_with_verified_quotes():
+    """T5a: integrity.facts carries each cited fact's value and its stored span text."""
+    approved_brain()
+    _, manifest = run_plan_build(SOURCE_ID)
+    published = manifest["integrity"]["facts"]
+    assert set(published) == set(manifest["integrity"]["fact_index"])
+    spans = {sp["id"]: sp["text"] for sp in get_store().get_spans(SOURCE_ID)}
+    for fid, fact in published.items():
+        assert fact["origin"] == "canon"
+        assert fact["quote"] == spans[manifest["integrity"]["fact_index"][fid]]
+    assert published["offer_price_bengaluru"]["value"] == "127400"

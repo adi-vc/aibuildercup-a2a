@@ -4,20 +4,30 @@
   "schema_version": "1.0",
   "brain_version": "br_p0_stub",
   "bitgraph_version": "bg_p0_stub",
-  "locales": ["en-IN", "hi-IN"],
+  "locales": [
+    "en-IN",
+    "hi-IN"
+  ],
   "beats": [
     {
       "id": "b_flood",
       "kind": "hold",
-      "fact_ids": ["f_wading_depth"],
-      "vault_refs": ["plate_flood_street"],
+      "fact_ids": [
+        "f_wading_depth"
+      ],
+      "vault_refs": [
+        "plate_flood_street"
+      ],
       "text_slots": {
         "en-IN": "30 cm of water. Still going.",
         "hi-IN": "30 सेमी पानी। फिर भी चलती रही।"
       },
       "audio_slots": {},
       "bindings": [],
-      "hinge": {"in": "wide_neutral", "out": "wide_neutral"},
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
       "edges": []
     }
   ],
@@ -30,19 +40,46 @@
       "uri": "/assets/placeholder_flood_street.svg",
       "poster_uri": "/assets/placeholder_flood_street.svg",
       "depth_uri": "",
-      "fact_ids": ["f_wading_depth"],
+      "fact_ids": [
+        "f_wading_depth"
+      ],
       "model": "placeholder-p0",
       "seed": 0,
       "bible_version": "none"
     }
   },
-  "accessibility": {"captions": true, "audio_description": false},
-  "policy": {"kids_mode": false, "competitor_exclusions": []},
+  "accessibility": {
+    "captions": true,
+    "audio_description": false
+  },
+  "policy": {
+    "kids_mode": false,
+    "competitor_exclusions": []
+  },
   "integrity": {
-    "fact_index": {"f_wading_depth": "sp_wading_depth"},
-    "beat_index": {"f_wading_depth": ["b_flood"]},
-    "asset_index": {"f_wading_depth": ["plate_flood_street"]},
+    "fact_index": {
+      "f_wading_depth": "sp_wading_depth"
+    },
+    "beat_index": {
+      "f_wading_depth": [
+        "b_flood"
+      ]
+    },
+    "asset_index": {
+      "f_wading_depth": [
+        "plate_flood_street"
+      ]
+    },
     "coverage": 1.0,
-    "linted_at": "2026-09-30T00:00:00Z"
+    "linted_at": "2026-09-30T00:00:00Z",
+    "facts": {
+      "f_wading_depth": {
+        "value": "30",
+        "unit": "cm",
+        "text": "Wades through water up to 30 cm deep.",
+        "quote": "wades through water up to 30 cm deep",
+        "origin": "canon"
+      }
+    }
   }
 }

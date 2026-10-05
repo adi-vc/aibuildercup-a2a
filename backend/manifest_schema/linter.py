@@ -43,6 +43,8 @@ Invariants (§39.9 + §26 + §28):
   INV-14  Every stating beat (fact_ids non-empty) cites ≥1 fact_id
           (already covered by INV-02 for cross-ref, but separately: fact_ids list non-empty)
   INV-15  linted_at is present and non-empty (already schema)
+  INV-16  If integrity.facts is present, its keys equal integrity.fact_index's
+          and every entry is origin=canon (only canon facts may reach a viewer)
 """
 
 from __future__ import annotations
@@ -112,6 +114,7 @@ class ManifestLinter:
         self._check_inv10_kids_mode_no_non_sponsor_slots()
         self._check_inv13_text_slot_locales_declared()
         self._check_inv14_stating_beats_have_fact_ids()
+        self._check_inv16_published_facts_match_fact_index()
 
         return self._violations
 
@@ -299,6 +302,29 @@ class ManifestLinter:
                     f"Stating beat '{beat['id']}' must cite at least one fact_id or declare mood=true.",
                     path=f"beats[{beat['id']}].fact_ids",
                 )
+
+    def _check_inv16_published_facts_match_fact_index(self) -> None:
+        """
+        INV-16: integrity.facts is optional, but when present it must describe
+        exactly the cited facts (keys == fact_index) and only canon ones. The
+        runtime shows these values on screen as the §24.2 rung-3 fallback, so
+        an extra or non-canon entry would be an uncited claim.
+        """
+        integrity = self.m.get("integrity", {})
+        facts = integrity.get("facts")
+        if facts is None:
+            return
+        indexed = set(integrity.get("fact_index", {}))
+        for fid in sorted(indexed - facts.keys()):
+            self._add("INV-16", f"fact_id '{fid}' is in fact_index but missing from integrity.facts",
+                      path="integrity.facts")
+        for fid in sorted(facts.keys() - indexed):
+            self._add("INV-16", f"integrity.facts has '{fid}', which is not in fact_index",
+                      path="integrity.facts")
+        for fid, fact in facts.items():
+            if fact.get("origin") != "canon":
+                self._add("INV-16", f"integrity.facts['{fid}'] is origin={fact.get('origin')!r}; only canon may ship",
+                          path=f"integrity.facts[{fid}]")
 
     # ── Helper ────────────────────────────────────────────────────────────────
 

@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     env: str = "local"          # local | staging | production
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
+    # ── Play-time bindings (§24.2) ───────────────────────────────────────────────
+    # Stand-in for a dealer pricing feed, keyed by city. Defaults equal the
+    # published fixture prices. BINDINGS_FAIL=1 makes the resolver return 503.
+    live_offer_feed: dict[str, int] = {"mumbai": 129900, "bengaluru": 127400}
+    bindings_fail: bool = False
+
     # ── App ──────────────────────────────────────────────────────────────────────
     app_version: str = "0.1.0-p1"
 

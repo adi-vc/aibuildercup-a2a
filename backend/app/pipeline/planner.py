@@ -43,6 +43,14 @@ def _fact_map(facts: list[Fact]) -> dict[str, Fact]:
     return {fact.id: fact for fact in facts if fact.origin == "canon" and fact.span_id}
 
 
+def _verified_quote(fact: Fact, span_text: dict[str, str]) -> str:
+    """A canon fact's on-screen quote must be its stored span, never a paraphrase."""
+    quote = span_text.get(fact.span_id, "")
+    if not quote:
+        raise ValueError(f"Canon fact '{fact.id}' has no stored span '{fact.span_id}' to quote.")
+    return quote
+
+
 def _text_slots(en: str, hi: str) -> dict[str, str]:
     return {"en-IN": en, "hi-IN": hi}
 
@@ -66,7 +74,10 @@ def _beat(
     }
 
 
-def _manifest_from_facts(source_id: str, brain_run: BrainRun, facts: list[Fact], kids_mode: bool) -> dict[str, Any]:
+def _manifest_from_facts(
+    source_id: str, brain_run: BrainRun, facts: list[Fact], kids_mode: bool,
+    span_text: dict[str, str] | None = None,
+) -> dict[str, Any]:
     """Create the Vega ads adapter's eight-beat plan from verified facts only."""
     by_id = _fact_map(facts)
     required = {
@@ -84,7 +95,7 @@ def _manifest_from_facts(source_id: str, brain_run: BrainRun, facts: list[Fact],
         _beat("b_performance", ["f_zero_sixty"], _text_slots("0 to 60 in 8.2 seconds.", "8.2 सेकंड में 0 से 60।")),
         _beat("b_charge", ["f_charge_time"], _text_slots("0 to 80% in 4 hours 30 minutes.", "4 घंटे 30 मिनट में 0 से 80%।")),
         _beat("b_clearance", ["f_ground_clearance"], _text_slots("165 mm of ground clearance.", "165 मिमी ग्राउंड क्लियरेंस।")),
-        _beat("b_offer", ["offer_price_mumbai", "offer_price_bengaluru"], _text_slots("Your city price, live when you play.", "आपके शहर की कीमत, जब आप चलाएं तब लाइव।"), bindings=["price"]),
+        _beat("b_offer", ["offer_price_mumbai", "offer_price_bengaluru"], _text_slots("On-road in your city:", "आपके शहर में:"), bindings=["price"]),
         _beat("b_warranty", ["warranty"], _text_slots("3 years or 30,000 km battery warranty.", "3 साल या 30,000 किमी बैटरी वारंटी।")),
     ]
     cited_fact_ids = sorted({fid for beat in beats for fid in beat["fact_ids"]})
@@ -116,6 +127,16 @@ def _manifest_from_facts(source_id: str, brain_run: BrainRun, facts: list[Fact],
         "vault": vault,
         "integrity": {
             "fact_index": {fid: by_id[fid].span_id for fid in cited_fact_ids},
+            # Published values + verified quotes for the runtime's §24.2 rung 3
+            # and the inspector; the quote is the stored span, never model text.
+            "facts": {
+                fid: {
+                    "value": by_id[fid].value, "unit": by_id[fid].unit, "text": by_id[fid].text,
+                    "quote": _verified_quote(by_id[fid], span_text or {}),
+                    "origin": "canon",
+                }
+                for fid in cited_fact_ids
+            },
             "beat_index": beat_index, "asset_index": asset_index,
             "coverage": 1.0, "linted_at": datetime.now(timezone.utc).isoformat(),
         },
@@ -184,7 +205,8 @@ def run_plan_build(source_id: str, kids_mode: bool = False) -> tuple[PlanRun, di
     store.save_plan_run(run)
     try:
         facts = [Fact(**raw) for raw in store.get_facts_by_source(source_id)]
-        manifest = _manifest_from_facts(source_id, brain_run, facts, kids_mode)
+        span_text = {sp["id"]: sp["text"] for sp in store.get_spans(source_id)}
+        manifest = _manifest_from_facts(source_id, brain_run, facts, kids_mode, span_text)
         run.model_used = _apply_gemini_copy(manifest, facts)
         run.offline = not bool(settings.gemini_api_key)
         violations = ManifestLinter(manifest).run()
