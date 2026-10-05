@@ -56,7 +56,7 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 
 ## Current task
 
-**Nothing in flight.** T4 is `DONE`. P4 (Vault) or P5 (runtime + swap + embed) may be proposed next; the two tracks remain independent behind the frozen manifest schema.
+**Nothing in flight.** T4.1 (golden-fixture repair) is `DONE`. **T5a — P5 runtime + swap + bindings ladder is `PROPOSED`**, awaiting `GO`. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
 
 ## Task log
 
@@ -182,3 +182,55 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 **Alternative found:** The ads adapter owns beat IDs, fact assignments, bindings, and integrity indexes; Gemini structured output is restricted to bilingual copy and is rejected if it changes those structural fields. This is a deliberate safety refinement: model output cannot weaken the fact-to-beat contract. No plan update required.
 
 **Blockers / follow-ups:** P4 replaces `planned-p3` placeholder plates with content-addressed Vault assets. P5 can independently consume `m_<source_id>_standard` through `GET /v1/manifest/{manifest_id}`. Configure Gemini + GCP to exercise the live planner and Firestore persistence.
+
+### T4.1 — Restore the golden manifest + fix `.gitignore`   ·   audit fix (P2)
+- Status: DONE
+- Dates: opened 2026-10-05 · updated 2026-10-05
+- Goal: A fresh clone passes the full backend suite and the CI strict golden-lint step.
+
+**What was wrong:** `.gitignore` carried a blanket `*.json` rule (with a few `!` exceptions). `backend/fixtures/p0_single_beat.json` — the P2 golden manifest that T1/T3 report as committed — was therefore **never in git**. On a clean tree, 4 tests failed (`test_manifest.py` ×3, `test_linter.py::test_golden_fixture_lints_clean`; 77/81 passed) and the Cloud Build `manifest_schema.linter fixtures/p0_single_beat.json --strict` step would fail. The same rule would also have silently dropped `frontend/package-lock.json`. This was an ignore-rule bug, not lost work: T1/T3 ran against a local copy.
+
+**Done / changed:**
+- `.gitignore` — replaced `*.json` with credential-only patterns (`service-account*.json`, `gcp-credentials*.json`, `*-key.json`, `*credentials*.json`). `.env` / `.env.*` remain ignored. No other JSON file became newly visible.
+- `backend/fixtures/p0_single_beat.json` — recreated from the T1 description: one `b_flood` hold citing `f_wading_depth`, EN/HI text slots, `plate_flood_street` → `/assets/placeholder_flood_street.svg`, full integrity indexes, `coverage: 1.0`.
+- Verified: strict linter exits 0; **81/81 backend tests pass**.
+
+**Couldn't do / shortcuts:** The recreated fixture is not byte-identical to the original local file (its `span_id`/`brain_version` values are new placeholders). Nothing consumes those values beyond the linter and the P0 player.
+
+**Alternative found:** Local dev works on **Python 3.12** (Homebrew `python@3.12`); the pinned wheels (`rapidfuzz`, `pydantic-core`) exist for 3.12. 3.14 fails to build `rapidfuzz`. The Dockerfile stays on 3.11. No plan update needed.
+
+**Blockers / follow-ups:** `frontend/package-lock.json` will be committed with T5a's first `npm install`.
+
+### T5a — Runtime, multi-beat playback, locale/city swap, bindings ladder   ·   P5 (part 1) / F17 F19 F8
+- Status: PROPOSED
+- Dates: opened 2026-10-05 · updated 2026-10-05
+- Goal: The planner's 8-beat manifest (`GET /v1/manifest/m_<source_id>_standard`) plays end to end in a Remotion composition. EN↔HI and Mumbai↔Bengaluru swap at play-time, `price` resolves through the §24.2 ladder, and the network log shows **zero generation calls**. Covers §64.7 criteria 1, 2 and 5; criteria 3–4 belong to T5b.
+
+**Scope:**
+- **Frontend:**
+  - Add `remotion` + `@remotion/player`. Remotion's company license is free for teams of ≤3; confirm the team size.
+  - Add `vitest`.
+  - New `src/runtime/` module:
+    - `composition.tsx`: §47 layers, a `<Sequence>` per hold, Ken Burns stand-in for parallax.
+    - `bindings.ts`: a pure 4-rung ladder that returns a `{rung, value, source}` receipt record for P7.5.
+    - `profile.ts`: reads `?profile=`, contains no PII.
+  - `BeatPlayer` → `<Player>`, with a city selector and the P0 debug strip removed.
+  - `resolveBindings()` in `api/client.ts`, with a timeout.
+- **Backend (minimal play-time resolver, §35):**
+  - `POST /v1/bindings/resolve {keys[], city, sku}` → `{values, resolved_at}`, backed by a small config "live offer feed".
+  - A `BINDINGS_FAIL=1` kill switch that returns 503.
+- **Tests:**
+  - Vitest: one test per ladder rung. "Resolver killed" must yield the cited fact or neutral wording, never an uncited number.
+  - Pytest: resolver per city, unknown city, and the kill switch.
+  - Playwright: a network-log capture over a `?variants=1` locale × city × {standard, kids} grid.
+  - Build, typecheck and lint clean.
+
+**Known gap (logged, not solved):** §19 moment 6 swaps the street plate per city, but the frozen schema has **no per-city plate field**. T5a swaps only the price binding. Adding per-city plate variants is a both-builders schema decision (§66.2 rule 1) to take before P4/T5b.
+
+### T5b — Embed, Service Worker, degradation ladder, parallax   ·   P5 (part 2) / F26 F11
+- Status: PROPOSED (detailed when T5a closes)
+- Goal: §64.7 criteria 3–4.
+  - A one-line `<iframe>` snippet renders inside a dummy third-party storefront from a cold cache in under 10 s.
+  - p95 first frame < 2 s.
+  - Includes the Service Worker (C4 cache tier), the full → low-res → still+parallax → still degradation ladder, and the depth-driven parallax shader (with Ken Burns when `depth_uri` is empty).
+  - Hosted proof stays deferred until GCP exists; a localhost cross-origin storefront stands in for it.

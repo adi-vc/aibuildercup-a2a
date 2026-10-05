@@ -26,14 +26,13 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
-# GCP / credentials — never commit these
-*.json
-!package.json
-!tsconfig*.json
-!firebase.json
-!*.schema.json
-service-account-key.json
-gcp-credentials.json
+# GCP / credentials — never commit these.
+# Name credential files explicitly: a blanket *.json rule silently dropped the
+# golden manifest fixture and package-lock.json (see PLAN_TRACKER T4.1).
+service-account*.json
+gcp-credentials*.json
+*-key.json
+*credentials*.json
 
 # IDE
 .vscode/
