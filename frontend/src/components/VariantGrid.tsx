@@ -15,6 +15,7 @@ import { BindingCache } from '../runtime/bindings';
 import { VachanComposition } from '../runtime/composition';
 import { beatPosterFrame, durationFor, FPS, HEIGHT, WIDTH } from '../runtime/timeline';
 import { CITIES } from '../runtime/profile';
+import { readEnvironment } from '../runtime/tier';
 import styles from './VariantGrid.module.css';
 
 /** Any request matching this would be a play-time generation call (§22). */
@@ -49,6 +50,9 @@ export function VariantGrid({ manifest }: { manifest: Manifest }) {
   const [cache] = useState(() => new BindingCache(resolveBindings));
   const [resolvedAt, setResolvedAt] = useState<number | null>(null);
   const [ledger, setLedger] = useState<LedgerRow[]>([]);
+  // Thumbnails are stills: render them on the `still` rung (no WebGL context
+  // per cell — browsers cap live contexts at ~16).
+  const [env] = useState(() => ({ ...readEnvironment(window.location.search), tier: 'still' as const }));
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +91,7 @@ export function VariantGrid({ manifest }: { manifest: Manifest }) {
             <figure key={`${m.manifest_id}|${locale}|${city.id}`} className={styles.cell}>
               <Thumbnail
                 component={VachanComposition}
-                inputProps={{ manifest: m, locale, bindings }}
+                inputProps={{ manifest: m, locale, bindings, env }}
                 compositionWidth={WIDTH}
                 compositionHeight={HEIGHT}
                 durationInFrames={durationFor(m)}

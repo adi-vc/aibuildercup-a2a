@@ -56,7 +56,7 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 
 ## Current task
 
-**Nothing in flight.** T5a (P5 runtime + swap + bindings ladder) is `DONE`; T5b (embed, Service Worker, degradation ladder, parallax) is `PROPOSED`, awaiting `GO`. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
+**Nothing in flight.** T5a and T5b are `DONE` — P5 (runtime, swap, embed) is complete locally; next task to be proposed. P5 was chosen over P4 because P4's exit criteria need live Gemini Image/TTS credentials that don't exist yet, while P5 needs none and carries 24 of the 75 live seconds.
 
 ## Task log
 
@@ -261,9 +261,67 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 4. Open `/?manifest=m_src_demo_standard&entry_beat=b_offer` or `&variants=1`.
 
 ### T5b — Embed, Service Worker, degradation ladder, parallax   ·   P5 (part 2) / F26 F11
-- Status: PROPOSED (detailed when T5a closes)
+- Status: DONE
+- Dates: opened 2026-10-05 · GO 2026-10-06 · updated 2026-10-06
 - Goal: §64.7 criteria 3–4.
-  - A one-line `<iframe>` snippet renders inside a dummy third-party storefront from a cold cache in under 10 s.
+  - The one-line embed renders inside a third-party page from a cold cache in < 10 s, with no host changes.
   - p95 first frame < 2 s.
-  - Includes the Service Worker (C4 cache tier), the full → low-res → still+parallax → still degradation ladder, and the depth-driven parallax shader (with Ken Burns when `depth_uri` is empty).
-  - Hosted proof stays deferred until GCP exists; a localhost cross-origin storefront stands in for it.
+
+**Exit criteria — verified locally:**
+- **Setup:** `vite preview` production build on :4173, API on :8080, storefront on :8090. Playwright opened a fresh context for every run (cold: no HTTP cache, no SW).
+- **What's measured:** host navigation → the embed's first frame with plate and text painted.
+
+1. ✅ **Criterion 3 — embed under 10 s, cold.** `samples/storefront/index.html` is a static page on another origin, with only the pasted `<iframe>` and no host JS. The embed plays in it.
+   - **Unthrottled:** p50 108 ms, p95 **121 ms** (n = 20).
+   - **Emulated Fast 3G** (150 ms RTT, 1.6 Mbps): p95 **1.72 s** (n = 10).
+2. ✅ **Criterion 4 — p95 first frame under 2 s.** **1.72 s** on Fast 3G, **0.12 s** unthrottled. All runs reached first frame via the depth-parallax path.
+   - Caveat: this is localhost without a real CDN. Re-measure on the hosted URL when GCP exists (hosted register).
+3. ✅ **Service Worker (C4).**
+   - After the first visit, the bundles, plate, depth map and manifest are served by the SW. `POST /v1/bindings/resolve` is never cached.
+   - **With the API killed**, a reload still plays all 8 beats from the cached manifest, and the price falls to ₹1,29,900 "as published" (rung 3, cited to its span).
+4. ✅ **Degradation ladder.**
+   - `?tier=still` gives a plain `<img>`, no motion. `still_parallax` and `full` give the WebGL depth canvas.
+   - Pixel readback confirms the near layer moves (a window edge shifts 18→22 px) while the far layer holds.
+   - Unit-tested: Save-Data, connection type, reduced motion, and no-WebGL → Ken Burns.
+5. ✅ **Manifest freshness** (T5a issue). `no-cache` + a strong content `ETag` (sha256 of canonical JSON), with a 304 on `If-None-Match`. A rebuild is visible on the next play; an unchanged manifest costs a 304.
+
+**Done / changed:**
+- **Backend:**
+  - `routers/manifest.py`: ETag, 304 and `Access-Control-Expose-Headers: ETag`.
+  - `config.py`: CORS allows :4173 (preview).
+  - `planner.py`: placeholder plates carry `depth_uri` → `/assets/placeholder_flood_street_depth.svg`, a hand-drawn depth map standing in for P4's monocular depth (§66.2 rule 3).
+  - 2 new tests. **93/93 backend tests pass.**
+- **Frontend:**
+  - Two-page build (`index.html` + `embed.html`, via `build.rolldownOptions.input`).
+  - `src/embed.tsx` + `EmbedApp`: chromeless, autoplay muted, quiet in-frame error.
+  - `RuntimePlayer`: shared by the player page and the embed.
+  - Runtime modules:
+    - `runtime/tier.ts`: `chooseTier` + `renderPlan`.
+    - `runtime/DepthParallax.tsx`: a WebGL displacement shader. The drift is a pure function of frame; it uses `delayRender` and falls back to Ken Burns.
+    - `runtime/firstFrame.ts`: a User Timing mark, `window.__vachanFirstFrame`, and a `postMessage` to the parent.
+    - `runtime/prefetch.ts`: preloads the entry beat and the next beat.
+    - `runtime/embed.ts`: the snippet builder.
+    - `runtime/serviceWorker.ts` + `public/sw.js`.
+  - The player gets a "Copy embed" snippet panel.
+  - Holds fall one rung on failure: parallax → Ken Burns, plate → gradient. The text layer is independent.
+  - Players start on the entry beat's poster frame, so a paused player is never blank.
+  - `firebase.json`: `sw.js` is `no-cache`. The page title is now "Vachan".
+  - **24/24 vitest**; `tsc`, `eslint` and the build are clean.
+
+**Couldn't do / shortcuts:**
+- **Not browser-verified:**
+  - The plate-load-failure → gradient path (Remotion `onError`). It needs a manifest with a broken plate URI; it's code-reviewed only.
+  - Throttled `navigator.connection` → tier selection. CDP emulation doesn't drive `effectiveType`; it's covered by unit tests and `?tier=`.
+- **SW cache never evicts old hashed bundles.** §51 calls for LRU eviction that never drops the current beat; deferred, since the demo has one build.
+- **Low-res tier is untested on real assets.** It loads `poster_uri`, which equals the full plate until P4 produces real posters.
+- **No recorded video** of the embed proof yet (P9 dry runs).
+
+**Alternative found:** ETag revalidation instead of content-versioned manifest URLs. A pasted embed references a stable id and must survive rebuilds, so the "immutable per version" CDN rule (§49 C3) applies to Vault assets; the manifest is revalidated. No plan text changed; noted here.
+
+**Blockers / follow-ups:**
+- **P5 is complete locally.** Hosted re-measurement of criteria 3–4 is deferred with T1's hosting work.
+- **Per-city plate variants** remain a both-builders schema decision.
+- **Next candidates:**
+  - **P6** client side: gesture scrubbing (needs clips from P4/P6-A, or placeholder clips).
+  - **P7.5** play-log + receipt: B-side; the binding `{rung, source}` records from T5a feed it directly.
+  - **P4** Vault, once Gemini/GCP credentials exist.

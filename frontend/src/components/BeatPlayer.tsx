@@ -7,14 +7,14 @@
  * The binding readout under the stage shows which §24.2 rung is on screen.
  */
 
-import { Player } from '@remotion/player';
 import type React from 'react';
+import { useState } from 'react';
 import type { Manifest, ViewerProfile } from '../types/manifest';
 import { CITIES } from '../runtime/profile';
 import { useBindings } from '../runtime/useBindings';
-import { VachanComposition } from '../runtime/composition';
-import { beatPosterFrame, durationFor, FPS, HEIGHT, WIDTH } from '../runtime/timeline';
 import type { BindingResolution } from '../runtime/bindings';
+import { embedSnippet } from '../runtime/embed';
+import { RuntimePlayer } from './RuntimePlayer';
 import styles from './BeatPlayer.module.css';
 
 interface Props {
@@ -37,6 +37,27 @@ function describeSource(r: BindingResolution): string {
     case 'fact': return `${r.source.fact_id} → ${r.source.span_id}`;
     case 'omitted': return 'no live value, no published fact for this city';
   }
+}
+
+function EmbedSnippet({ manifestId, profile }: { manifestId: string; profile: ViewerProfile }) {
+  const [copied, setCopied] = useState(false);
+  const snippet = embedSnippet(window.location.origin, manifestId, profile);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard can be blocked (permissions, http); the snippet stays selectable below.
+    }
+  };
+  return (
+    <details className={styles.embed}>
+      <summary>Embed this video</summary>
+      <code className={styles.snippet}>{snippet}</code>
+      <button type="button" className={styles.copyButton} onClick={copy}>{copied ? 'Copied ✓' : 'Copy embed'}</button>
+    </details>
+  );
 }
 
 export function BeatPlayer({ manifest, profile, onProfileChange }: Props) {
@@ -71,22 +92,7 @@ export function BeatPlayer({ manifest, profile, onProfileChange }: Props) {
       </div>
 
       <div className={styles.stage}>
-        <Player
-          // Remount only when the entry beat changes; locale/city swaps keep the playhead.
-          key={profile.entry_beat ?? ''}
-          initialFrame={profile.entry_beat ? beatPosterFrame(manifest, profile.entry_beat) : 0}
-          component={VachanComposition}
-          inputProps={{ manifest, locale: profile.locale, bindings }}
-          durationInFrames={durationFor(manifest)}
-          fps={FPS}
-          compositionWidth={WIDTH}
-          compositionHeight={HEIGHT}
-          style={{ width: '100%' }}
-          controls
-          loop
-          clickToPlay={false}
-          acknowledgeRemotionLicense
-        />
+        <RuntimePlayer manifest={manifest} locale={profile.locale} bindings={bindings} entryBeat={profile.entry_beat} />
       </div>
 
       {Object.values(bindings).length > 0 && (
@@ -98,6 +104,8 @@ export function BeatPlayer({ manifest, profile, onProfileChange }: Props) {
           ))}
         </ul>
       )}
+
+      <EmbedSnippet manifestId={manifest.manifest_id} profile={profile} />
     </div>
   );
 }

@@ -40,3 +40,22 @@ def test_manifest_cors_header():
     resp = client.get("/v1/manifest/p0_single_beat")
     assert resp.status_code == 200
     assert resp.headers.get("access-control-allow-origin") == "*"
+
+
+def test_manifest_is_revalidated_with_etag():
+    """T5b: stable ids + rebuilds mean no max-age; an unchanged manifest is a 304."""
+    first = client.get("/v1/manifest/p0_single_beat")
+    assert first.headers["cache-control"] == "no-cache"
+    etag = first.headers["etag"]
+    assert etag.startswith('"') and "ETag" in first.headers["access-control-expose-headers"]
+    again = client.get("/v1/manifest/p0_single_beat", headers={"If-None-Match": etag})
+    assert again.status_code == 304
+    assert again.content == b""
+    stale = client.get("/v1/manifest/p0_single_beat", headers={"If-None-Match": '"not-current"'})
+    assert stale.status_code == 200
+
+
+def test_manifest_etag_changes_with_content():
+    from app.routers.manifest import manifest_etag
+    assert manifest_etag({"a": 1, "b": 2}) == manifest_etag({"b": 2, "a": 1})
+    assert manifest_etag({"a": 1}) != manifest_etag({"a": 2})

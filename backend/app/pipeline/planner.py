@@ -23,6 +23,9 @@ from manifest_schema.linter import ManifestLinter
 
 LOCALES = ["en-IN", "hi-IN"]
 PLACEHOLDER_URI = "/assets/placeholder_flood_street.svg"
+# Placeholders are content-addressed stand-ins too (§66.2 rule 3): P4 swaps in
+# real plates and depth maps without any runtime change.
+PLACEHOLDER_DEPTH_URI = "/assets/placeholder_flood_street_depth.svg"
 log = logging.getLogger(__name__)
 
 # Gemini is allowed to improve copy only.  The adapter owns IDs, fact
@@ -102,7 +105,7 @@ def _manifest_from_facts(
     vault = {
         ref: {
             "kind": "plate", "uri": PLACEHOLDER_URI, "poster_uri": PLACEHOLDER_URI,
-            "depth_uri": "", "fact_ids": beat["fact_ids"], "model": "planned-p3",
+            "depth_uri": PLACEHOLDER_DEPTH_URI, "fact_ids": beat["fact_ids"], "model": "planned-p3",
             "seed": 0, "bible_version": "pending-p4",
         }
         for beat in beats for ref in beat["vault_refs"]

@@ -3,24 +3,30 @@
  *
  * One <Sequence> per hold beat. Each hold stacks the §47 layers:
  *   L0 plate      — the only generated pixels, identical for every viewer
- *   L1 motion     — a Ken Burns push standing in for depth parallax (T5b)
+ *   L1 motion     — depth parallax (WebGL), else Ken Burns, else none (§29 ladder)
  *   L3 text       — locale copy + the resolved binding (price), never baked
  *   L4 UI         — fact badges that open the cited span
- * Nothing here fetches or generates: every input arrives as props, so a
- * locale or city swap is a re-render of layers over the same plate.
+ * Nothing here generates: every input arrives as props, so a locale or city
+ * swap is a re-render of layers over the same plate. A failing plate or
+ * shader drops a rung; the text layer is independent and always renders.
  */
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AbsoluteFill, Img, interpolate, Sequence, useCurrentFrame } from 'remotion';
 import type { Beat, Manifest } from '../types/manifest';
 import { bindingTag, type BindingResolution } from './bindings';
 import styles from './composition.module.css';
+import { DepthParallax } from './DepthParallax';
+import { markFirstFrame } from './firstFrame';
 import { HOLD_FRAMES, TEXT_IN_START, TEXT_SETTLED } from './timeline';
+import { renderPlan, type Tier, type ViewerEnv } from './tier';
 
 export interface CompositionProps extends Record<string, unknown> {
   manifest: Manifest;
   locale: string;
   bindings: Record<string, BindingResolution>;
+  /** Degradation-ladder inputs (tier.ts). */
+  env: { tier: Tier; viewer: ViewerEnv };
 }
 
 // ── L4: fact badge ───────────────────────────────────────────────────────────
@@ -63,7 +69,7 @@ function BindingLine({ resolution, locale }: { resolution: BindingResolution; lo
   );
 }
 
-// ── One hold ─────────────────────────────────────────────────────────────────
+// ── L4: which facts get a badge ──────────────────────────────────────────────
 
 /** Badges for what is actually claimed on screen. A bound beat cites one fact
  *  per city; only the fallback fact actually shown (rung 3) gets a badge. */
@@ -74,21 +80,61 @@ function shownFactIds(beat: Beat, bindings: Record<string, BindingResolution>): 
     .flatMap((src) => (src?.kind === 'fact' ? [src.fact_id] : []));
 }
 
-function Hold({ beat, manifest, locale, bindings }: { beat: Beat } & CompositionProps) {
+// ── L0 + L1 ──────────────────────────────────────────────────────────────────
+
+function PlateLayer({ beat, manifest, env }: Pick<CompositionProps, 'manifest' | 'env'> & { beat: Beat }) {
   const frame = useCurrentFrame();
-  const plate = manifest.vault[beat.vault_refs[0] ?? ''];
-  const scale = interpolate(frame, [0, HOLD_FRAMES], [1, 1.06]);
+  const asset = manifest.vault[beat.vault_refs[0] ?? ''];
+  const plan = renderPlan(env.tier, env.viewer, !!asset?.depth_uri);
+  const [failed, setFailed] = useState<'none' | 'parallax' | 'plate'>('none');
+  const plateSrc = asset ? (plan.plate === 'poster' ? asset.poster_uri || asset.uri : asset.uri) : '';
+  const motion = plan.motion === 'parallax' && failed === 'parallax' ? 'kenburns' : plan.motion;
+  const showFallback = !asset || failed === 'plate';
+
+  const onParallaxReady = useCallback(() => markFirstFrame(beat.id, 'parallax'), [beat.id]);
+  const onParallaxFallback = useCallback(() => setFailed('parallax'), []);
+  useEffect(() => {
+    if (showFallback) markFirstFrame(beat.id, 'fallback');
+  }, [showFallback, beat.id]);
+
+  if (showFallback) {
+    return <AbsoluteFill className={styles.platePlaceholder} />;
+  }
+  if (motion === 'parallax') {
+    return (
+      <DepthParallax
+        plateSrc={plateSrc}
+        depthSrc={asset.depth_uri!}
+        className={styles.plate}
+        onReady={onParallaxReady}
+        onFallback={onParallaxFallback}
+      />
+    );
+  }
+  const scale = motion === 'kenburns' ? interpolate(frame, [0, HOLD_FRAMES], [1, 1.06]) : 1;
+  return (
+    <Img
+      src={plateSrc}
+      className={styles.plate}
+      style={{ transform: `scale(${scale})` }}
+      maxRetries={1}
+      onLoad={() => markFirstFrame(beat.id, 'plate')}
+      onError={() => setFailed('plate')}
+    />
+  );
+}
+
+// ── One hold ─────────────────────────────────────────────────────────────────
+
+function Hold({ beat, manifest, locale, bindings, env }: { beat: Beat } & CompositionProps) {
+  const frame = useCurrentFrame();
   const textIn = interpolate(frame, [TEXT_IN_START, TEXT_SETTLED], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const text = beat.text_slots[locale] ?? beat.text_slots['en-IN'] ?? '';
 
   return (
     <AbsoluteFill className={styles.hold} data-beat={beat.id}>
       {/* L0 + L1 */}
-      {plate ? (
-        <Img src={plate.uri} className={styles.plate} style={{ transform: `scale(${scale})` }} />
-      ) : (
-        <AbsoluteFill className={styles.platePlaceholder}>[ plate: {beat.vault_refs[0] ?? 'none'} ]</AbsoluteFill>
-      )}
+      <PlateLayer beat={beat} manifest={manifest} env={env} />
 
       {/* L3 */}
       <div className={styles.textLayer} style={{ opacity: textIn }}>

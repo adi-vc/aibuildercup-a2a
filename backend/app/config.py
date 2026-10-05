@@ -38,7 +38,8 @@ class Settings(BaseSettings):
 
     # ── Runtime environment ──────────────────────────────────────────────────────
     env: str = "local"          # local | staging | production
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    # 4173 = `vite preview` (production build, used for first-frame measurement).
+    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:4173", "http://localhost:3000"]
 
     # ── Play-time bindings (§24.2) ───────────────────────────────────────────────
     # Stand-in for a dealer pricing feed, keyed by city. Defaults equal the

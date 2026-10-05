@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volt Wheels — Vega V1</title>
+  <!--
+    Dummy third-party storefront (vachan-plan.md §19 moment 9, §64.7 criterion 3).
+    It knows nothing about Vachan: no scripts, no SDK, no config. The only
+    Vachan-related content is the one-line <iframe> pasted into the product
+    section below. Serve it from a different origin than the player, e.g.:
+        python3 -m http.server 8090 --directory samples/storefront
+  -->
+  <style>
+    body { margin: 0; font-family: Georgia, 'Times New Roman', serif; background: #f6f1e9; color: #2b2620; }
+    header { padding: 18px 32px; background: #2b2620; color: #f6f1e9; display: flex; justify-content: space-between; align-items: baseline; }
+    header h1 { margin: 0; font-size: 22px; letter-spacing: 0.04em; }
+    header nav a { color: #f6f1e9; margin-left: 20px; text-decoration: none; font-size: 14px; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+    .crumbs { font-size: 13px; color: #8a7f70; }
+    h2 { font-size: 34px; margin: 8px 0 4px; }
+    .tagline { margin: 0 0 24px; color: #6b6052; }
+    .buy { display: flex; gap: 24px; align-items: center; margin: 24px 0; }
+    .buy button { background: #b4461f; color: #fff; border: 0; padding: 12px 22px; font-size: 16px; border-radius: 4px; }
+    .specs { columns: 2; font-size: 15px; line-height: 1.8; }
+    footer { text-align: center; font-size: 12px; color: #8a7f70; padding: 24px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>VOLT WHEELS</h1>
+    <nav><a href="#">Scooters</a><a href="#">Test rides</a><a href="#">Service</a></nav>
+  </header>
+  <main>
+    <p class="crumbs">Home › Electric scooters › Vega V1</p>
+    <h2>Vega V1</h2>
+    <p class="tagline">Monsoon-ready electric scooter. Test-ride week at all Volt Wheels showrooms.</p>
+
+    <!-- ↓ pasted embed snippet (one line, unchanged) ↓ -->
+    <iframe src="http://localhost:4173/embed.html?manifest=m_src_demo_standard&city=mumbai&locale=en-IN" title="Interactive video" style="width:100%;aspect-ratio:16/9;border:0" allow="autoplay; fullscreen" loading="lazy"></iframe>
+    <!-- ↑ pasted embed snippet ↑ -->
+
+    <div class="buy">
+      <button type="button">Book a test ride</button>
+      <span>Free home test rides in Mumbai and Bengaluru.</span>
+    </div>
+    <ul class="specs">
+      <li>Two colours: Monsoon Grey, Signal Orange</li>
+      <li>Removable seat cushion</li>
+      <li>Showroom pickup or home delivery</li>
+      <li>EMI options at checkout</li>
+    </ul>
+  </main>
+  <footer>Volt Wheels is a fictional dealer used for the Vachan demo.</footer>
+</body>
+</html>

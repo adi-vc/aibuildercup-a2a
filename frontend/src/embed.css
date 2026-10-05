@@ -1,0 +1,21 @@
+/* embed.css — the embed fills its iframe; the host owns everything outside. */
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.embed-message {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 14px;
+}

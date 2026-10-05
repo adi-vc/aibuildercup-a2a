@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
@@ -25,5 +26,14 @@ export default defineConfig({
     // Output to dist/ — Firebase Hosting serves this directory.
     outDir: 'dist',
     sourcemap: true,
+    // Two pages: the studio/player (index.html) and the chromeless embed
+    // (embed.html) that hosts load in an <iframe>. Separate entries keep the
+    // embed bundle free of studio-only views.
+    rolldownOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        embed: resolve(__dirname, 'embed.html'),
+      },
+    },
   },
 });

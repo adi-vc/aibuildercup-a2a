@@ -23,6 +23,13 @@ export function beatStartFrame(manifest: Manifest, beatId: string): number {
   return Math.max(0, manifest.beats.findIndex((b) => b.id === beatId)) * HOLD_FRAMES;
 }
 
+/** Parallax camera drift at a frame within a hold: a slow lateral dolly plus a
+ *  slight rise. Pure in the frame, so every render of a frame is identical. */
+export function parallaxOffset(frame: number): [number, number] {
+  const t = Math.min(1, Math.max(0, frame / HOLD_FRAMES)) - 0.5;
+  return [t * 0.035, t * 0.012];
+}
+
 /** First frame of a beat with its text fully in — for entry points and thumbnails. */
 export function beatPosterFrame(manifest: Manifest, beatId: string): number {
   return beatStartFrame(manifest, beatId) + TEXT_SETTLED + 2;
