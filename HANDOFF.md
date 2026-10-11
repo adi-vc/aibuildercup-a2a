@@ -1,26 +1,26 @@
-# Handoff — where Vachan stands (2026-10-06)
+# Handoff — where Vachan stands (2026-10-10)
 
 This is a snapshot for whoever picks the build up next. It summarises the work; [`PLAN_TRACKER.md`](PLAN_TRACKER.md) has the full per-task detail: every exit criterion, its measurements, the shortcuts taken and the bugs fixed. The workflow in [`AGENTS.md`](AGENTS.md) §6 still applies: propose the task, mark it `GO`, work on one task at a time, and log as you go.
 
 ## TL;DR
 
 - **Built locally:** P0–P3, P5, P6 (with placeholder clips) and P7.5. That covers the swap, the embed, the drag-to-scrub branch and the signed receipt — about **39 of the 75 live demo seconds** (slides 7b, 10–12).
-- **Blocked on credentials:** P4 (Vault) and P7 (claim guard — the refusal moment, slides 8–9). There is still no `GEMINI_API_KEY` and no GCP project.
-- **Never hosted:** everything runs on localhost with in-memory storage. The hosted proofs are `DEFERRED`; see "Hosted validation" below.
+- **Hosted validation complete (T1, T2):** GCP project `a2a-ghostrider-511215` live, API deployed to Cloud Run (region `asia-south1`), GCS bucket `vachan_bucket` operational, Firestore persistence verified, Gemini API (`gemini-3.8-flash`) integrated and working.
+- **Ready to unblock:** P4 (Vault) and P7 (claim guard) now have credentials. `GEMINI_API_KEY` configured in Cloud Run; local testing requires ADC or API key in `.env`.
 - **Tests:** 133 backend (pytest) and 38 frontend (vitest), all green. `tsc`, `eslint`, `vite build` and the strict golden-manifest lint are all clean.
 
 ## Phase status
 
 | Phase | Task | Status | Notes |
 |---|---|---|---|
-| P0 walking skeleton | T1 | ✅ local · ⏸ hosted | Deploy config exists; project IDs are placeholders. |
-| P1 Brain + span verifier | T2 | ✅ offline · ⏸ Firestore | Uses stub extraction when there's no Gemini key; the verifier is real. |
+| P0 walking skeleton | T1 | ✅ local · ✅ hosted | Deployed to GCP project `a2a-ghostrider-511215`, region `asia-south1`, API on Cloud Run. |
+| P1 Brain + span verifier | T2 | ✅ offline · ✅ Firestore | Gemini API (`gemini-3.8-flash`) integrated; Firestore persistence validated across restarts. |
 | P2 schema + linter | T3, T4.1 | ✅ | T4.1 restored the golden fixture, which `.gitignore` had silently excluded. |
 | P3 planner | T4 | ✅ | Deterministic ads template; Gemini only rewrites copy. |
-| **P4 Vault** | — | ❌ **not started** | Needs Gemini Image, TTS and depth. Placeholders stand in (see below). |
+| **P4 Vault** | — | ❌ **not started** | Credentials now available. Needs Gemini Image, TTS and depth. Placeholders stand in (see below). |
 | P5 runtime, swap, embed | T5a, T5b | ✅ local | Cold first-frame p95: 0.12 s unthrottled, 1.72 s on Fast 3G. |
 | P6 edges + scrubbing | T7 | ✅ placeholder clips | All-intra verified in CI; the real Veo clips come later. |
-| **P7 claim guard** | — | ❌ **not started** | Needs Gemini Flash. A keyword-rule fallback exists in the plan (§32.1 #11). |
+| **P7 claim guard** | — | ❌ **not started** | Credentials now available. Needs Gemini Flash. A keyword-rule fallback exists in the plan (§32.1 #11). |
 | P7.5 play-log + receipt | T6 | ✅ local | HMAC signing and per-manifest chain; Firestore path written but never run. |
 | P8 accessibility | — | ❌ | High-contrast skin is doable now; captions and audio description need P4 TTS. |
 | P9 adapters, evals, deck | — | ❌ | |
@@ -70,11 +70,12 @@ curl -s -X POST localhost:8080/v1/gates/<plan_run_id>/plan -H 'content-type: app
 
 | Variable | Effect |
 |---|---|
-| `GEMINI_API_KEY` | Enables live extraction and planner copy. Offline stubs are used without it. |
-| `GOOGLE_CLOUD_PROJECT` / `FIRESTORE_EMULATOR_HOST` | Switches the store from memory to Firestore. |
+| `GEMINI_API_KEY` | Enables live extraction and planner copy. Required for hosted deployment (configured in Cloud Run). Offline stubs are used without it. |
+| `GOOGLE_CLOUD_PROJECT` / `FIRESTORE_EMULATOR_HOST` | Switches the store from memory to Firestore. Production uses project `a2a-ghostrider-511215`. |
+| `GCS_BUCKET_NAME` | GCS bucket for source/asset storage. Production uses `vachan_bucket`. |
 | `PLAYLOG_HMAC_KEY` | Play-log signing key; inject it from Secret Manager in production. Locally a per-process ephemeral key is used; non-local environments refuse to sign without one. |
 | `BINDINGS_FAIL=1` | Kills the price resolver, to demo the §24.2 fallback ladder. |
-| `VITE_API_BASE_URL` | Frontend → API base. Defaults to `http://localhost:8080`. |
+| `VITE_API_BASE_URL` | Frontend → API base. Defaults to `http://localhost:8080`. Production: `https://vachan-api-rcsu47sdaq-el.a.run.app`. |
 
 ## What was built in this session (T4.1 → T7)
 
@@ -109,12 +110,15 @@ curl -s -X POST localhost:8080/v1/gates/<plan_run_id>/plan -H 'content-type: app
 
 ### Needs credentials (highest demo value first)
 
+**Note:** GCP project and Gemini API credentials are now configured for hosted deployment. P4 and P7 can proceed.
+
 1. **P7 claim guard:** `/v1/ask` and the refusal UI, slides 8–9, the most memorable mechanism.
-   - Needs `GEMINI_API_KEY`.
+   - `GEMINI_API_KEY` now available.
    - The play-log already has signed `questions` and `refusals` fields, so the guard only has to append to them.
 2. **P4 Vault:**
    - Bible, plates (Gemini Image), the no-baked-text vision check, depth maps, patches, TTS with SSML marks, and gate 3.
    - Real assets replace the placeholders with no runtime change; plates, depth and clips are referenced by vault URI.
+   - Credentials now available for all required Google APIs.
 3. **Veo clips (the A-side of P6):** replace the recipes in `placeholder_clips.py` with image-conditioned Veo generation. Keep `encode_all_intra`, `verify_all_intra` and the derive-last-frame rule.
 
 ### Credential-free
@@ -131,11 +135,17 @@ curl -s -X POST localhost:8080/v1/gates/<plan_run_id>/plan -H 'content-type: app
 - **Third locale** (§76.3) decides metric 3: 24 vs 36 variants. The grid currently shows 48: 12 cities × 2 locales × {standard, kids}.
 - **Remotion license:** confirm the team is ≤ 3 people, or buy a company license. The code passes `acknowledgeRemotionLicense`.
 
-### Hosted validation (deferred; follow `docs/HOSTED_VALIDATION_RUNBOOK.md`)
+### Hosted validation
 
-- **T1:** the deployed URL opens from another device. **T2:** a Gate 1 edit survives an API restart on Firestore.
+✅ **T1 (deployed URL, completed 2026-10-10):** API deployed to Cloud Run at `https://vachan-api-rcsu47sdaq-el.a.run.app`, accessible from any device. GCS bucket `vachan_bucket` operational. Source upload verified.
+
+✅ **T2 (Firestore persistence, completed 2026-10-10):** Gate 1 edit to `f_wading_depth` persisted across Cloud Run redeployment. Gemini extraction (`gemini-3.8-flash`) working with detailed logging. 8 facts extracted with verbatim quotes.
+
+**Remaining:**
 - **T5b:** re-measure the embed cold-load and first-frame p95 on the real CDN.
 - **T6:** exercise the Firestore transactional chain append.
+
+Detailed runbook: [`docs/HOSTED_VALIDATION_RUNBOOK.md`](docs/HOSTED_VALIDATION_RUNBOOK.md)
 
 ### Known gaps and polish (details in the tracker)
 

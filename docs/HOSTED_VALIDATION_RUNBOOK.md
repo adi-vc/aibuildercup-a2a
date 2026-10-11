@@ -2,7 +2,7 @@
 
 Use this runbook whenever a Vachan task needs shared cloud infrastructure, deployment, hosted verification, or an externally accessible environment. It is a reusable team procedure, not specific to any particular task. Hosted validation is normally `DEFERRED` while local feature work can continue; change it to `BLOCKED` only when a task genuinely cannot proceed without the hosted result.
 
-The current deferred entries are T1's external hosted skeleton check and T2's Firestore persistence-across-restart check. Their task-specific procedures appear below as examples and should be followed when the team chooses to validate them.
+**Status Update (2026-10-11):** T1 and T2 validation is complete. This runbook remains as a template for future hosted validation tasks (P4 Vault hosting, P7 guard deployment, etc.). See `PLAN_TRACKER.md` hosted validation register for completion evidence.
 
 ## Security and team-safety rules
 
@@ -71,7 +71,9 @@ For every new hosted requirement, create or update its task entry in `PLAN_TRACK
 
 Add a row to the **Hosted validation register** in `PLAN_TRACKER.md` with: task ID, status, target environment, owner, remaining proof, and a link to any task-specific section added to this runbook. Use the same structure as the current T1/T2 examples below.
 
-## Current deferred validation — T1 hosted walking skeleton
+## ✅ COMPLETED — T1 hosted walking skeleton (2026-10-10)
+
+**This section is retained as a reference template for future P0-style deployments.**
 
 ### 1. Provision shared infrastructure
 
@@ -121,7 +123,9 @@ From a different device or network (not only the deployer's machine):
 
 Record the URLs, build ID, external-device tester, and result under T1 in `PLAN_TRACKER.md`. Once all three P0 exit criteria are evidenced, set T1 to `DONE`.
 
-## Current deferred validation — T2 Firestore persistence across restart
+## ✅ COMPLETED — T2 Firestore persistence + Gemini (2026-10-10/11)
+
+**This section is retained as a reference template for future persistence validation.**
 
 T2's remaining proof is persistence, not extraction quality. The existing in-memory tests cover Gate 1 behavior within one process, but cannot prove a process restart.
 
