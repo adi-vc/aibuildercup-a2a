@@ -20,6 +20,7 @@ substitutions:
   _PROJECT_ID: a2a-ghostrider-511215
   _API_SERVICE: vachan-api
   _IMAGE: asia-south1-docker.pkg.dev/a2a-ghostrider-511215/vachan/api
+  _GCS_BUCKET: vachan_bucket
 
 steps:
 
@@ -75,7 +76,7 @@ steps:
       - --memory=512Mi
       - --cpu=1
       - --port=8080
-      - --set-env-vars=ENV=production,GOOGLE_CLOUD_PROJECT=${_PROJECT_ID}
+      - --set-env-vars=ENV=production,GOOGLE_CLOUD_PROJECT=${_PROJECT_ID},GCS_BUCKET=${_GCS_BUCKET}
     waitFor:
       - backend-push
 
