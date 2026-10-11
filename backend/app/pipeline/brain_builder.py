@@ -105,12 +105,14 @@ def _make_span_id(source_id: str, start: int) -> str:
 
 # ── Main pipeline ─────────────────────────────────────────────────────────────
 
-def run_brain_build(source_id: str, gcs_path: str) -> BrainRun:
+async def run_brain_build(source_id: str, gcs_path: str) -> BrainRun:
     """
     Run the full extraction + verification pipeline for a source.
 
     Returns a BrainRun with status="awaiting_gate" (gate 1 open for review).
     The run and all facts/spans are already persisted to the store.
+    
+    Async to avoid blocking other requests during slow Gemini extraction.
     """
     store = brain_store.get_store()
     run = BrainRun(source_id=source_id, step="extract")
@@ -122,8 +124,8 @@ def run_brain_build(source_id: str, gcs_path: str) -> BrainRun:
         run.step = "extract"
         store.update_run(run.id, {"step": "extract"})
 
-        # ── Step 2: extract ───────────────────────────────────────────────────
-        result: ExtractionResult = extract(raw_text, source_id)
+        # ── Step 2: extract (ASYNC) ───────────────────────────────────────────
+        result: ExtractionResult = await extract(raw_text, source_id)
         run.model_used = result.model_used
         run.offline = result.offline
 

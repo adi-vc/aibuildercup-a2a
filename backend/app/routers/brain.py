@@ -64,7 +64,7 @@ async def build_brain(body: BuildRequest) -> BuildResponse:
             gcs_path = source_doc.get("gcs_path", "")
 
     try:
-        run: BrainRun = run_brain_build(body.source_id, gcs_path)
+        run: BrainRun = await run_brain_build(body.source_id, gcs_path)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

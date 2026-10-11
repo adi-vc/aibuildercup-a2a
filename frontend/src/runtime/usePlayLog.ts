@@ -63,5 +63,5 @@ export function usePlayLog(
     return submitPlay(record);
   }, [observe]);
 
-  return { onBeatChange: setBeatId, submit };
+  return { onBeatChange: setBeatId, submit, recorder: recorderRef.current };
 }

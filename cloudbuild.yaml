@@ -76,7 +76,7 @@ steps:
       - --memory=512Mi
       - --cpu=1
       - --port=8080
-      - --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+      - --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest,PLAYLOG_HMAC_KEY=PLAYLOG_HMAC_KEY:latest
       - --set-env-vars=ENV=production,GOOGLE_CLOUD_PROJECT=${_PROJECT_ID},GCS_BUCKET=${_GCS_BUCKET}
     waitFor:
       - backend-push

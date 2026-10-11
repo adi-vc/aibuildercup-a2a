@@ -11,6 +11,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { usePlayLog } from '../runtime/usePlayLog';
 import type { SignedPlayRecord } from '../runtime/playlog';
+import { profileHash } from '../runtime/playlog';
 import { Receipt } from './Receipt';
 import type { Manifest, ViewerProfile } from '../types/manifest';
 import { CITIES } from '../runtime/profile';
@@ -18,6 +19,7 @@ import { useBindings } from '../runtime/useBindings';
 import type { BindingResolution } from '../runtime/bindings';
 import { embedSnippet } from '../runtime/embed';
 import { RuntimePlayer } from './RuntimePlayer';
+import { QuestionPanel, type AskResponse } from './QuestionPanel';
 import styles from './BeatPlayer.module.css';
 
 interface Props {
@@ -70,6 +72,12 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
   const playLog = usePlayLog(manifest, version, profile, bindings);
   const [receipt, setReceipt] = useState<SignedPlayRecord | null>(null);
   const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [currentProfileHash, setCurrentProfileHash] = useState<string>('');
+
+  // Compute profile hash for the QuestionPanel
+  useState(() => {
+    profileHash(profile).then(setCurrentProfileHash, () => undefined);
+  });
 
   const endPlay = async () => {
     setReceiptError(null);
@@ -77,6 +85,16 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
       setReceipt(await playLog.submit());
     } catch (e) {
       setReceiptError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const handleQuestionAsked = (question: string, response: AskResponse) => {
+    if (!playLog.recorder) return;
+    
+    if (response.type === 'answered') {
+      playLog.recorder.recordQuestion(question, response.answer, response.facts_cited);
+    } else {
+      playLog.recorder.recordRefusal(question, response.type, response.reason);
     }
   };
 
@@ -135,6 +153,14 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
       {receipt && <Receipt record={receipt} manifest={manifest} onClose={() => setReceipt(null)} />}
 
       <EmbedSnippet manifestId={manifest.manifest_id} profile={profile} />
+
+      <QuestionPanel
+        manifestId={manifest.manifest_id}
+        locale={profile.locale}
+        profileHash={currentProfileHash}
+        apiBaseUrl={import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}
+        onQuestionAsked={handleQuestionAsked}
+      />
     </div>
   );
 }

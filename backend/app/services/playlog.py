@@ -76,8 +76,8 @@ class PlayRecordIn(BaseModel):
     ended_at: str
     shown: list[Segment] = Field(min_length=1, max_length=500)
     # Filled by P7 (the claim guard); present now so receipts already count them.
-    questions: list[str] = Field(default_factory=list, max_length=100)
-    refusals: list[dict[str, Any]] = Field(default_factory=list, max_length=100)
+    questions: list[dict[str, Any]] = Field(default_factory=list, max_length=100)  # {q, a?, facts_cited?}
+    refusals: list[dict[str, Any]] = Field(default_factory=list, max_length=100)  # {q, type, reason}
 
 
 # ── Canonical form, hashing, signing ─────────────────────────────────────────

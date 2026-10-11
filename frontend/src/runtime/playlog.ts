@@ -34,8 +34,8 @@ export interface PlayRecord {
   started_at: string;
   ended_at: string;
   shown: ShownSegment[];
-  questions: string[];
-  refusals: { type: number }[];
+  questions: { q: string; a?: string; facts_cited?: string[] }[];
+  refusals: { q: string; type: string; reason: string }[];
 }
 
 export interface SignedPlayRecord extends PlayRecord {
@@ -75,6 +75,8 @@ export function segmentFor(
 
 export class PlayRecorder {
   private segments: ShownSegment[] = [];
+  private questions: { q: string; a?: string; facts_cited?: string[] }[] = [];
+  private refusals: { q: string; type: string; reason: string }[] = [];
   private lastKey = '';
   private startedAt: string | null = null;
   private readonly manifest: Manifest;
@@ -101,6 +103,16 @@ export class PlayRecorder {
     return began;
   }
 
+  /** Record a question that was answered. */
+  recordQuestion(question: string, answer?: string, factsCited?: string[]): void {
+    this.questions.push({ q: question, a: answer, facts_cited: factsCited });
+  }
+
+  /** Record a refusal. */
+  recordRefusal(question: string, type: string, reason: string): void {
+    this.refusals.push({ q: question, type, reason });
+  }
+
   get hasContent(): boolean {
     return this.segments.length > 0;
   }
@@ -115,14 +127,16 @@ export class PlayRecorder {
       started_at: this.startedAt,
       ended_at: this.now(),
       shown: this.segments.map((s) => structuredClone(s)),
-      questions: [],
-      refusals: [],
+      questions: structuredClone(this.questions),
+      refusals: structuredClone(this.refusals),
     };
   }
 
   /** Start a new play. The next observe() opens it with the current screen. */
   reset(): void {
     this.segments = [];
+    this.questions = [];
+    this.refusals = [];
     this.lastKey = '';
     this.startedAt = null;
   }

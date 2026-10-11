@@ -123,12 +123,14 @@ class ExtractionResult:
 
 # ── Main function ─────────────────────────────────────────────────────────────
 
-def extract(source_text: str, source_id: str) -> ExtractionResult:
+async def extract(source_text: str, source_id: str) -> ExtractionResult:
     """
     Extract entities and raw facts from `source_text`.
 
     If GEMINI_API_KEY is unset (or ENV=local without a key), returns the
     fixture stub facts so the rest of the pipeline can run offline.
+    
+    Async to avoid blocking other requests during slow Gemini calls.
     """
     api_key = settings.gemini_api_key
     if not api_key:
@@ -138,11 +140,12 @@ def extract(source_text: str, source_id: str) -> ExtractionResult:
         )
         return _stub_result(source_id)
 
-    return _gemini_extract(source_text, source_id)
+    return await _gemini_extract(source_text, source_id)
 
 
-def _gemini_extract(source_text: str, source_id: str) -> ExtractionResult:
-    """Call Gemini with structured output and return an ExtractionResult."""
+async def _gemini_extract(source_text: str, source_id: str) -> ExtractionResult:
+    """Call Gemini with structured output and return an ExtractionResult. Async to avoid blocking."""
+    import asyncio
     import google.generativeai as genai
     from google.generativeai.types import GenerationConfig
 
@@ -156,18 +159,61 @@ def _gemini_extract(source_text: str, source_id: str) -> ExtractionResult:
 
     prompt = USER_TEMPLATE.format(source_text=source_text[:400_000])  # hard cap
 
-    response = model.generate_content(
-        prompt,
-        generation_config=GenerationConfig(
-            temperature=0.0,
-            response_mime_type="application/json",
-            response_schema=RESPONSE_SCHEMA,
-        ),
-    )
+    # ── DEBUG: Log the Gemini request ─────────────────────────────────────────
+    log.info("=" * 80)
+    log.info("🔵 GEMINI EXTRACTION REQUEST")
+    log.info("=" * 80)
+    log.info(f"Model: {model_name}")
+    log.info(f"Source ID: {source_id}")
+    log.info(f"Temperature: 0.0")
+    log.info(f"Response format: application/json (structured)")
+    log.info("-" * 80)
+    log.info("SYSTEM PROMPT:")
+    log.info(SYSTEM_PROMPT)
+    log.info("-" * 80)
+    log.info("USER PROMPT (first 1000 chars):")
+    log.info(prompt[:1000] + ("..." if len(prompt) > 1000 else ""))
+    log.info("-" * 80)
+    log.info("RESPONSE SCHEMA:")
+    log.info(json.dumps(RESPONSE_SCHEMA, indent=2))
+    log.info("=" * 80)
+
+    # Run blocking Gemini call in thread pool
+    loop = asyncio.get_event_loop()
+    
+    def _generate():
+        return model.generate_content(
+            prompt,
+            generation_config=GenerationConfig(
+                temperature=0.0,
+                response_mime_type="application/json",
+                response_schema=RESPONSE_SCHEMA,
+            ),
+        )
+    
+    response = await loop.run_in_executor(None, _generate)
+
+    # ── DEBUG: Log the Gemini response ────────────────────────────────────────
+    log.info("=" * 80)
+    log.info("🟢 GEMINI EXTRACTION RESPONSE")
+    log.info("=" * 80)
+    log.info(f"Raw response text (first 2000 chars):")
+    log.info(response.text[:2000] + ("..." if len(response.text) > 2000 else ""))
+    log.info("-" * 80)
 
     try:
         data = json.loads(response.text)
+        log.info(f"Parsed JSON successfully:")
+        log.info(f"  - Entities: {len(data.get('entities', []))}")
+        log.info(f"  - Facts: {len(data.get('facts', []))}")
+        log.info("-" * 80)
+        log.info("FULL RESPONSE (formatted):")
+        log.info(json.dumps(data, indent=2))
+        log.info("=" * 80)
     except (json.JSONDecodeError, AttributeError) as exc:
+        log.error("❌ FAILED to parse Gemini response as JSON")
+        log.error(f"Response text: {response.text[:500]}")
+        log.info("=" * 80)
         raise RuntimeError(
             f"Gemini returned non-JSON response: {response.text[:200]}"
         ) from exc

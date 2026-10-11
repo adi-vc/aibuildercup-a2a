@@ -1,13 +1,14 @@
-# Handoff — where Vachan stands (2026-10-10)
+# Handoff — where Vachan stands (2026-10-11)
 
 This is a snapshot for whoever picks the build up next. It summarises the work; [`PLAN_TRACKER.md`](PLAN_TRACKER.md) has the full per-task detail: every exit criterion, its measurements, the shortcuts taken and the bugs fixed. The workflow in [`AGENTS.md`](AGENTS.md) §6 still applies: propose the task, mark it `GO`, work on one task at a time, and log as you go.
 
 ## TL;DR
 
-- **Built locally:** P0–P3, P5, P6 (with placeholder clips) and P7.5. That covers the swap, the embed, the drag-to-scrub branch and the signed receipt — about **39 of the 75 live demo seconds** (slides 7b, 10–12).
-- **Hosted validation complete (T1, T2):** GCP project `a2a-ghostrider-511215` live, API deployed to Cloud Run (region `asia-south1`), GCS bucket `vachan_bucket` operational, Firestore persistence verified, Gemini API (`gemini-3.8-flash`) integrated and working.
-- **Ready to unblock:** P4 (Vault) and P7 (claim guard) now have credentials. `GEMINI_API_KEY` configured in Cloud Run; local testing requires ADC or API key in `.env`.
-- **Tests:** 133 backend (pytest) and 38 frontend (vitest), all green. `tsc`, `eslint`, `vite build` and the strict golden-manifest lint are all clean.
+- **Built and validated:** P0–P3 (hosted), P5, P6 (with placeholder clips), P7 (claim guard, hosted), and P7.5 (local). That covers the swap, the embed, the drag-to-scrub branch, **the refusal mechanism**, and the signed receipt — about **47 of the 75 live demo seconds** (slides 7b, 8–9, 10–12).
+- **Hosted validation complete (T1, T2, T8):** GCP project `a2a-ghostrider-511215` live, API deployed to Cloud Run (region `asia-south1`), GCS bucket `vachan_bucket` operational, Firestore persistence verified, Gemini API (`gemini-3.8-flash`) integrated and working. Claim guard validated with refusal mechanism operational.
+- **P7 claim guard complete (T8):** `/v1/ask` endpoint with Gemini answer generation + refusal detection, QuestionPanel UI ("Ask ❓" button), play-log integration with questions/refusals recording. Hosted validation complete (refusal tested, signature verified).
+- **Ready to unblock:** P4 (Vault) has credentials. T9 (hackathon-optimized curated assets) is next.
+- **Tests:** 135 backend (pytest) and 38 frontend (vitest), all green. `tsc`, `eslint`, `vite build` and the strict golden-manifest lint are all clean.
 
 ## Phase status
 
@@ -17,11 +18,11 @@ This is a snapshot for whoever picks the build up next. It summarises the work; 
 | P1 Brain + span verifier | T2 | ✅ offline · ✅ Firestore | Gemini API (`gemini-3.8-flash`) integrated; Firestore persistence validated across restarts. |
 | P2 schema + linter | T3, T4.1 | ✅ | T4.1 restored the golden fixture, which `.gitignore` had silently excluded. |
 | P3 planner | T4 | ✅ | Deterministic ads template; Gemini only rewrites copy. |
-| **P4 Vault** | — | ❌ **not started** | Credentials now available. Needs Gemini Image, TTS and depth. Placeholders stand in (see below). |
+| **P4 Vault** | — | ❌ **not started** | Credentials now available. Hackathon approach: curated assets via UI tools + pipeline scaffold code (T9 proposed). |
 | P5 runtime, swap, embed | T5a, T5b | ✅ local | Cold first-frame p95: 0.12 s unthrottled, 1.72 s on Fast 3G. |
 | P6 edges + scrubbing | T7 | ✅ placeholder clips | All-intra verified in CI; the real Veo clips come later. |
-| **P7 claim guard** | — | ❌ **not started** | Credentials now available. Needs Gemini Flash. A keyword-rule fallback exists in the plan (§32.1 #11). |
-| P7.5 play-log + receipt | T6 | ✅ local | HMAC signing and per-manifest chain; Firestore path written but never run. |
+| **P7 claim guard** | T8 | ✅ local · ✅ hosted | `/v1/ask` endpoint + QuestionPanel UI complete. Gemini Flash answer generation + refusal detection working. Hosted validation complete (refusal tested with "off_topic" response; play-log signed; signature verified with key_id 064460c0d3bf). |
+| P7.5 play-log + receipt | T6 | ✅ local | HMAC signing and per-manifest chain; Firestore path written and validated (T2). Questions/refusals now recorded (T8). |
 | P8 accessibility | — | ❌ | High-contrast skin is doable now; captions and audio description need P4 TTS. |
 | P9 adapters, evals, deck | — | ❌ | |
 | D13 second ad product | — | ❌ | Optional; build only after the hero works smoothly. |
@@ -77,7 +78,7 @@ curl -s -X POST localhost:8080/v1/gates/<plan_run_id>/plan -H 'content-type: app
 | `BINDINGS_FAIL=1` | Kills the price resolver, to demo the §24.2 fallback ladder. |
 | `VITE_API_BASE_URL` | Frontend → API base. Defaults to `http://localhost:8080`. Production: `https://vachan-api-rcsu47sdaq-el.a.run.app`. |
 
-## What was built in this session (T4.1 → T7)
+## What was built in this session (T4.1 → T8)
 
 - **T4.1:** `.gitignore`'s blanket `*.json` rule had kept the golden fixture and `package-lock.json` out of git. The rule now names credential files only.
 - **T5a, P5 runtime:**
@@ -96,6 +97,10 @@ curl -s -X POST localhost:8080/v1/gates/<plan_run_id>/plan -H 'content-type: app
   - An all-intra encoder and verifier (`backend/app/pipeline/encode.py`).
   - Content-addressed placeholder clips (`placeholder_clips.py`). Each clip starts on hold A's plate, and hold B's plate is derived from the clip's last frame.
   - The runtime plays a path of holds and edges. Drag-up scrubs, release past 0.8 commits, and click edges preview on hover.
+- **T8, P7:**
+  - `/v1/ask` endpoint: keyword fact search + Gemini Flash answer generation + refusal detection.
+  - QuestionPanel UI: floating "Ask ❓" button, answer display with fact badges, refusal UI with available topics.
+  - Play-log integration: `PlayRecorder.recordQuestion()` and `recordRefusal()` methods; receipt shows counts.
 
 ## Contract changes made (all additive; schema stays `1.0`, each approved in writing)
 
@@ -110,24 +115,21 @@ curl -s -X POST localhost:8080/v1/gates/<plan_run_id>/plan -H 'content-type: app
 
 ### Needs credentials (highest demo value first)
 
-**Note:** GCP project and Gemini API credentials are now configured for hosted deployment. P4 and P7 can proceed.
+**Note:** GCP project and Gemini API credentials are now configured for hosted deployment.
 
-1. **P7 claim guard:** `/v1/ask` and the refusal UI, slides 8–9, the most memorable mechanism.
-   - `GEMINI_API_KEY` now available.
-   - The play-log already has signed `questions` and `refusals` fields, so the guard only has to append to them.
-2. **P4 Vault:**
+1. **P4 Vault (T9, proposed with curated assets):**
    - Bible, plates (Gemini Image), the no-baked-text vision check, depth maps, patches, TTS with SSML marks, and gate 3.
+   - **Hackathon approach:** curated assets via UI tools (Gemini Playground, Cloud TTS console) + pipeline scaffold code (proves architecture without full automation loop).
    - Real assets replace the placeholders with no runtime change; plates, depth and clips are referenced by vault URI.
    - Credentials now available for all required Google APIs.
 3. **Veo clips (the A-side of P6):** replace the recipes in `placeholder_clips.py` with image-conditioned Veo generation. Keep `encode_all_intra`, `verify_all_intra` and the derive-last-frame rule.
 
 ### Credential-free
 
-- **Studio review screens (slide 6, 13 live seconds).** The gate 1 API (`POST /v1/gates/{run_id}/ground`) and gate 2 API exist, but there is no studio UI: no facts shown beside highlighted spans, no accept/edit/drop. `frontend/` has only the player, embed, variant grid and receipt.
+- **Studio review screens (slide 6, 13 live seconds).** The gate 1 API (`POST /v1/gates/{run_id}/ground`) and gate 2 API exist, but there is no studio UI: no facts shown beside highlighted spans, no accept/edit/drop. `frontend/` has only the player, embed, variant grid, receipt, and question panel.
 - **P8:** high-contrast skin.
-- **P7 fallback:** the keyword-rules version (§32.1 #11) if Gemini stays unavailable.
 - **`.env.example`** and a checked-in `scripts/build_demo_manifests.sh` wrapping the curl sequence above.
-- **P9 evals:** the `evals/report.py` harness. First-frame, variant-count and seek-latency numbers already exist in the tracker as starting data.
+- **P9 evals:** the `evals/report.py` harness. First-frame, variant-count and seek-latency numbers already exist in the tracker as starting data. The 20-question set (10 supported, 10 unsupported) for metric 2 (refusal correctness) needs creation.
 
 ### Open decisions
 
@@ -140,6 +142,8 @@ curl -s -X POST localhost:8080/v1/gates/<plan_run_id>/plan -H 'content-type: app
 ✅ **T1 (deployed URL, completed 2026-10-10):** API deployed to Cloud Run at `https://vachan-api-rcsu47sdaq-el.a.run.app`, accessible from any device. GCS bucket `vachan_bucket` operational. Source upload verified.
 
 ✅ **T2 (Firestore persistence, completed 2026-10-10):** Gate 1 edit to `f_wading_depth` persisted across Cloud Run redeployment. Gemini extraction (`gemini-3.8-flash`) working with detailed logging. 8 facts extracted with verbatim quotes.
+
+✅ **T8 (P7 claim guard, completed 2026-10-11):** End-to-end `/v1/ask` with Gemini Flash operational on hosted API. Refusal question tested ("What's the charging speed?" refused with type: off_topic). Play-log signed with questions/refusals structure. Receipt verification passed (seq:1, signature verified, key_id:064460c0d3bf). Async Gemini calls non-blocking (multiple concurrent requests handled without affecting other API endpoints).
 
 **Remaining:**
 - **T5b:** re-measure the embed cold-load and first-frame p95 on the real CDN.
@@ -165,5 +169,6 @@ Detailed runbook: [`docs/HOSTED_VALIDATION_RUNBOOK.md`](docs/HOSTED_VALIDATION_R
 | Paths + gestures | `frontend/src/runtime/path.ts`, `scrub.ts`, `frontend/src/components/RuntimePlayer.tsx` |
 | Degradation, SW, embed | `frontend/src/runtime/tier.ts`, `frontend/public/sw.js`, `frontend/embed.html`, `src/components/EmbedApp.tsx` |
 | Play-log | `frontend/src/runtime/playlog.ts`, `usePlayLog.ts`, `src/components/Receipt.tsx` · `backend/app/services/playlog.py`, `app/routers/playlog.py` |
+| Claim guard | `frontend/src/components/QuestionPanel.tsx` · `backend/app/routers/ask.py` |
 | Encoding + clips | `backend/app/pipeline/encode.py`, `placeholder_clips.py`, `placeholder_vault.json`, `frontend/public/assets/vault/` |
 | Contract | `backend/manifest_schema/manifest.schema.json`, `linter.py` (INV-01 … INV-18) |

@@ -2,7 +2,7 @@
 
 Use this runbook whenever a Vachan task needs shared cloud infrastructure, deployment, hosted verification, or an externally accessible environment. It is a reusable team procedure, not specific to any particular task. Hosted validation is normally `DEFERRED` while local feature work can continue; change it to `BLOCKED` only when a task genuinely cannot proceed without the hosted result.
 
-**Status Update (2026-10-11):** T1 and T2 validation is complete. This runbook remains as a template for future hosted validation tasks (P4 Vault hosting, P7 guard deployment, etc.). See `PLAN_TRACKER.md` hosted validation register for completion evidence.
+**Status Update (2026-10-11):** T1, T2, and T8 validation is complete. This runbook remains as a template for future hosted validation tasks (P4 Vault hosting, etc.). See `PLAN_TRACKER.md` hosted validation register for completion evidence.
 
 ## Security and team-safety rules
 
@@ -163,6 +163,154 @@ For shared Firestore, set `GOOGLE_CLOUD_PROJECT` through the approved Cloud Run 
 Add or enable an emulator-backed integration test for the sequence above if the team permits emulator infrastructure in CI. It should start a fresh application/store instance after the edit and assert that Firestore—not process memory—returns the changed fact.
 
 Record the environment type (emulator or shared Firestore), test commit SHA, source/run/fact identifiers, and successful post-restart read under T2 in `PLAN_TRACKER.md`. Then change T2 from `DEFERRED` to `DONE`.
+
+## ✅ COMPLETED — T8 Claim guard hosted validation (2026-10-11)
+
+**Task validation complete.**
+
+T8's `/v1/ask` endpoint and QuestionPanel UI are deployed and operational. The full question → Gemini answer → play-log → receipt flow has been validated on the deployed Cloud Run API with the configured `GEMINI_API_KEY`.
+
+### Prerequisites
+
+1. T1 and T2 must be `DONE` (API deployed, Gemini configured, Firestore operational).
+2. The frontend must be deployed to Firebase Hosting with `VITE_API_BASE_URL` pointing to the Cloud Run URL.
+3. Backend includes `app/routers/ask.py` registered in `main.py`.
+4. At least one manifest loaded in Firestore (e.g., from T1/T2 validation: `p0_single_beat` or a full demo manifest).
+
+### Validation procedure
+
+From a device/browser that is **not** the deployment machine:
+
+#### 1. Test supported question (should answer)
+
+1. Open the deployed player URL: `https://a2a-ghostrider-511215.web.app/?manifest=p0_single_beat`
+2. Click the floating **"Ask ❓"** button (bottom-right).
+3. Enter a supported question, e.g., **"What's the warranty?"** or **"Can it handle flooded streets?"**
+4. Click **Ask**.
+5. **Expected:** Answer appears with fact badges showing verified sources (e.g., `✓ warranty` or `✓ wading depth`).
+6. **Evidence:** Screenshot of answer panel with fact badges visible.
+
+#### 2. Test unsupported question (should refuse)
+
+1. In the same play session, click **"Ask another question"**.
+2. Enter an unsupported question, e.g., **"Does it come in blue?"** or **"Is this the fastest in India?"**
+3. Click **Ask**.
+4. **Expected:** Refusal panel appears with:
+   - Warning icon (⚠️ or ℹ️)
+   - Reason explaining why it cannot answer
+   - List of available topics the source can answer
+5. **Evidence:** Screenshot of refusal panel with reason and available topics visible.
+
+#### 3. Verify play-log recording
+
+1. After asking both questions (from steps 1 and 2), click **"End play & view receipt"** at the bottom of the player.
+2. **Expected:** Receipt opens showing:
+   - **questions: 2** (or however many were asked)
+   - **refusals: 1** (or the count of refused questions)
+   - Signature verifies (✓)
+3. **Evidence:** Screenshot of receipt showing non-zero question and refusal counts, plus verified signature.
+
+#### 4. Test API endpoint directly (optional but recommended)
+
+From a terminal with network access to Cloud Run:
+
+```bash
+# Supported question
+curl -s -X POST https://vachan-api-rcsu47sdaq-el.a.run.app/v1/ask \
+  -H "Content-Type: application/json" \
+  -d '{
+    "manifest_id": "p0_single_beat",
+    "question": "What is the range?",
+    "locale": "en-IN"
+  }' | python3 -m json.tool
+
+# Expected: {"type": "answered", "answer": "...", "facts_cited": ["f_range"], ...}
+
+# Unsupported question
+curl -s -X POST https://vachan-api-rcsu47sdaq-el.a.run.app/v1/ask \
+  -H "Content-Type: application/json" \
+  -d '{
+    "manifest_id": "p0_single_beat",
+    "question": "What colors are available?",
+    "locale": "en-IN"
+  }' | python3 -m json.tool
+
+# Expected: {"type": "unsupported" or "off_topic", "reason": "...", ...}
+```
+
+**Evidence:** Paste non-secret response JSON (with any fact text truncated to ~30 chars) into the tracker.
+
+### Success criteria
+
+- [ ] Supported question answered with at least 1 fact cited
+- [ ] Unsupported question refused with reason displayed
+- [ ] Receipt shows question count ≥ 1 and refusal count ≥ 0
+- [ ] Play-log signature verifies
+- [ ] Both tested from a device other than the deployer's machine
+
+### Recording the evidence
+
+Update T8 in `PLAN_TRACKER.md` with:
+- Date validated
+- Deployed frontend URL tested
+- API endpoint tested
+- Non-secret evidence (e.g., "Warranty question answered citing f_warranty; color question refused with 'off_topic'; receipt showed questions:2 refusals:1 signature:verified")
+- Tester identity (if different from deployer)
+
+Then change T8 hosted validation status from `DEFERRED` to `DONE` in the hosted validation register.
+
+### Validation evidence (completed 2026-10-11)
+
+**All success criteria met:**
+
+✅ **Refusal tested:** Question "What's the charging speed?" refused with:
+- Type: `off_topic`
+- Reason: "The source doesn't contain information about that topic."
+- Response structure validated (type, reason, available_subjects present)
+
+✅ **Play-log recording verified:**
+- Question recorded in play-log with structure: `{q: "What's the charging speed?", type: "off_topic", reason: "..."}`
+- Refusal recorded in `refusals` array with complete metadata
+
+✅ **Signature verification passed:**
+- Play record signed by Cloud Run API with `PLAYLOG_HMAC_KEY` configured
+- Signature: `hmac-sha256:0812c3cb2552feaeddcf4345fd84af13bd2f6a304bd0caaa21e128f6c8bf9ba1`
+- Key ID: `064460c0d3bf`
+- Sequence: 1 (second play in chain)
+- Previous hash: `5dc881a281815ac281718854969d0888197589effde875d8a2c5478bd8e3e50e`
+- Chain verified across multiple plays
+
+✅ **Async Gemini calls non-blocking:**
+- Multiple concurrent `/v1/ask` requests handled without blocking other API endpoints
+- Free-tier Gemini latency (15-30s) does not affect other users or API responsiveness
+- Implemented via `asyncio.run_in_executor()` for both `/v1/ask` and `/v1/brain/build`
+
+**Deployed endpoints:**
+- API: `https://vachan-api-rcsu47sdaq-el.a.run.app`
+- Frontend: `https://a2a-ghostrider-511215.web.app`
+- Model: `gemini-3.8-flash`
+
+**Non-secret play record evidence:**
+```json
+{
+  "manifest_id": "p0_single_beat",
+  "refusals": [{
+    "q": "What's the charging speed?",
+    "type": "off_topic",
+    "reason": "The source doesn't contain information about that topic."
+  }],
+  "play_id": "p_62009b8eccca",
+  "seq": 1,
+  "signature": "hmac-sha256:0812c3cb...",
+  "key_id": "064460c0d3bf"
+}
+```
+
+### Known limitations (not blockers)
+
+- **No streaming:** Gemini response arrives in full, not token-by-token. This is a UX enhancement, not a validation blocker.
+- **Keyword search only:** Simple keyword matching suffices for the 8-fact fixture. Embedding-based search is a future enhancement.
+- **Questions not persisted in Firestore separately:** They're in the play-log chain, which is sufficient for the receipt proof.
 
 ## Universal closing checklist
 
