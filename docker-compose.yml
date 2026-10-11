@@ -34,6 +34,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - ./backend/.env
     environment:
       - GCS_EMULATOR_HOST=http://gcs-emulator:4443
       - GCS_BUCKET=vachan-vault-local
