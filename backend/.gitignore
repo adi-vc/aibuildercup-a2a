@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# Pytest
+.pytest_cache/
+
+# Environment
+.env
+.env.*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vault staging assets (manually curated, not committed)
+app/pipeline/vault_staging/plates/*.webp
+app/pipeline/vault_staging/plates/*.png
+app/pipeline/vault_staging/depth/*.png
+app/pipeline/vault_staging/audio/**/*.mp3
+app/pipeline/vault_staging/audio/**/*.wav
+app/pipeline/vault_staging/patches/*.svg
+app/pipeline/vault_staging/patches/*.png
+app/pipeline/vault_staging/clips/*.mp4
+
+# Keep directory structure but not the assets
+!app/pipeline/vault_staging/.gitkeep

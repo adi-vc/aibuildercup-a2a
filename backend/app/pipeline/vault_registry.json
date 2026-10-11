@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-10-11T00:00:00Z",
+  "assets": {},
+  "_note": "This registry will be populated as assets are curated and uploaded. Each asset entry contains: asset_id, asset_type, content_hash, gcs_uri, cdn_uri, metadata."
+}

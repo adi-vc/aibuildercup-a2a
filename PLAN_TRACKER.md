@@ -57,7 +57,7 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 
 ## Current task
 
-**T8 (P7 claim guard) is `DONE`.** The refusal mechanism is built — backend `/v1/ask` endpoint with Gemini Flash answer generation + refusal detection, frontend QuestionPanel with "Ask ❓" button, play-log integration for questions/refusals, receipt display of counts. All exit criteria met; 2 tests pass (non-Gemini), 6 tests deferred to hosted validation. Next: **T9 (P4 Vault curated assets)** or **P8 accessibility** or **P9 evals**.
+**T9 (P4 Vault curated assets) is `IN PROGRESS`.** Infrastructure complete: pipeline scaffolds written (bible, image_gen, depth, vision_check, tts, vault_uploader), upload script ready, vault_staging/ directories created, documentation complete (ASSET_CURATION_GUIDE.md, T9_QUICK_START.md). **Next: manual asset curation** via Gemini Playground (6 plates), MiDaS web demo (6 depth maps), Cloud TTS console (16 audio phrases), Figma/Canva (3-5 badges). Estimated 3-5 hours for full curation + upload + planner update + test. Minimum viable: 6 plates only = ~2 hours.
 
 ## Task log
 
@@ -525,8 +525,8 @@ A click is also marked `committing`, so a quick pointer-leave can't cancel it.
 ---
 
 ### T9 — Vault library (hackathon-optimized: curated assets + pipeline scaffold)   ·   P4 / F4 F5 F6 F8 F9 F19 F20
-- Status: PROPOSED
-- Dates: opened 2026-10-10
+- Status: IN PROGRESS
+- Dates: opened 2026-10-10 · GO 2026-10-11 · started 2026-10-11
 - Goal: **Hackathon approach** — pipeline code ready (proves the architecture), but **demo assets curated via UI tools** rather than full automated generation. Faster, cheaper, better-looking on stage. Exit criteria adjusted for demo:
   1. ≥ 6 plates (one per beat) — **generated via Gemini Playground / ImageFX / stock libraries**, hand-picked for visual quality and product consistency. Depth maps can be hand-drawn or generated via online depth tools (MiDaS web demo, etc.).
   2. TTS audio for key phrases in 2 locales — **pre-rendered via Google Cloud TTS console or ElevenLabs**, manually aligned to timeline (SSML marks optional; we can hard-code timings).
@@ -534,6 +534,50 @@ A click is also marked `committing`, so a quick pointer-leave can't cancel it.
   4. Transition clips — **use T7 placeholder clips or find 2–3 stock video clips** (Pexels, Pixabay) that fit the brand, encode them all-intra with the existing `encode.py`.
   5. All assets uploaded to GCS `vachan_bucket` with vault URIs; manifest updated to reference them.
   6. **Pipeline scaffold code present** (stubs for `bible.py`, `image_gen.py`, `depth.py`, `tts.py`, `vision_check.py`) to show judges "this is how it would automate" — but we don't run the full generation loop.
+
+**Done / changed (infrastructure complete, awaiting manual curation):**
+- ✅ **Directory structure** created: `vault_staging/{plates,depth,audio/{en-IN,hi-IN},patches,clips}`
+- ✅ **Pipeline scaffolds** written (6 modules, ~1000 LOC total):
+  - `bible.py` — beat type → layout + media directive mapping (BibleEntry model, get_bible_entry())
+  - `image_gen.py` — Gemini Image API wrapper with content-addressing (generate_plate(), content_hash())
+  - `depth.py` — monocular depth estimation scaffold (generate_depth_map(), validate_depth_map())
+  - `vision_check.py` — OCR detection for baked text (check_for_baked_text(), validate_plate())
+  - `tts.py` — Cloud TTS with SSML marks for timeline sync (generate_tts(), build_ssml())
+  - `vault_uploader.py` — GCS upload + registry (VaultRegistry class, upload_asset(), content-addressing)
+- ✅ **Upload script** (`scripts/upload_vault_assets.sh`): uploads vault_staging/ → GCS with immutable cache headers, dry-run mode, hash computation
+- ✅ **Vault registry** schema defined (`vault_registry.json`): tracks asset_id, content_hash, gcs_uri, cdn_uri, metadata
+- ✅ **Documentation:**
+  - `ASSET_CURATION_GUIDE.md` — full manual workflow (prompts, tools, file naming, upload procedure)
+  - `T9_QUICK_START.md` — 3-hour checklist with phase breakdown
+  - `app/pipeline/README.md` — module overview, T9 rationale, future automation path
+- ✅ **`.gitignore` rules** — vault_staging/ assets excluded (manual curation, not committed)
+
+**Couldn't do / shortcuts:**
+- **No assets curated yet** — requires manual work via Gemini Playground, MiDaS, Cloud TTS console (estimated 3-5 hours)
+- **Planner not yet updated** — will emit vault URIs after assets uploaded
+- **No real uploads** — awaiting curated assets
+
+**Alternative found / rationale logged:**
+- **Why manual curation over full automation?**
+  1. **Speed:** 3-5 hours to curate vs. 8-10 days to build + debug full pipeline
+  2. **Quality:** Hand-picked images look better than first-pass automated output
+  3. **Cost:** ~$1 for manual curation vs. $50-100 in regeneration loops
+  4. **Risk:** No "generation failed at 3am" surprises before demo
+  5. **Architecture proof:** Scaffold code shows judges we *can* automate; demo just uses curated inputs
+- **This is deliberate, not debt** — documented in pipeline README and curation guide
+
+**Blockers / follow-ups:**
+- **Next step:** Manual asset curation (see `T9_QUICK_START.md` checklist)
+  - Phase 1: Generate 6 plates via Gemini Playground/ImageFX
+  - Phase 2: Create 6 depth maps (MiDaS web demo or hand-draw)
+  - Phase 3: Generate TTS audio (16 phrases: 8 en-IN + 8 hi-IN)
+  - Phase 4: Create 3-5 badge SVGs (Figma/Canva)
+  - Phase 5: Upload via `./scripts/upload_vault_assets.sh`
+  - Phase 6: Update planner with vault URIs
+  - Phase 7: Test manifest with real assets
+- **Estimated time:** 3-5 hours for full curation + planner update + test
+- **Can defer:** Depth maps (Ken Burns fallback), badges (text-only), Hindi audio (English-only demo)
+- **Minimum viable:** 6 plates + planner update = ~2 hours
 
 **Scope (hackathon-optimized):**
 - **Asset curation (manual/UI):**
