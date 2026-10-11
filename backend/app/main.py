@@ -39,7 +39,7 @@ app = FastAPI(
 # Allow the Vite dev server and Firebase Hosting to call the API.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=settings.effective_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

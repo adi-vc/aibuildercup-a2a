@@ -37,6 +37,7 @@ COPY --from=deps /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY --chown=appuser:appuser app/ ./app/
+COPY --chown=appuser:appuser manifest_schema/ ./manifest_schema/
 COPY --chown=appuser:appuser fixtures/ ./fixtures/
 
 # Cloud Run injects PORT; default to 8080 for local docker run

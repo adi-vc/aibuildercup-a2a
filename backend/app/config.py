@@ -39,7 +39,8 @@ class Settings(BaseSettings):
     # ── Runtime environment ──────────────────────────────────────────────────────
     env: str = "local"          # local | staging | production
     # 4173 = `vite preview` (production build, used for first-frame measurement).
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:4173", "http://localhost:3000"]
+    # Set CORS_ORIGINS env var (comma-separated) to override, or let it auto-detect.
+    cors_origins: list[str] | None = None
 
     # ── Play-time bindings (§24.2) ───────────────────────────────────────────────
     # Stand-in for a dealer pricing feed, keyed by city. Defaults equal the
@@ -54,6 +55,32 @@ class Settings(BaseSettings):
 
     # ── App ──────────────────────────────────────────────────────────────────────
     app_version: str = "0.1.0-p1"
+
+    @property
+    def effective_cors_origins(self) -> list[str]:
+        """
+        Return CORS origins based on environment.
+        - Local dev: localhost on common ports
+        - Production: Firebase Hosting URL
+        - Can be overridden via CORS_ORIGINS env var (comma-separated)
+        """
+        if self.cors_origins is not None:
+            # Explicit override via environment variable
+            return self.cors_origins
+        
+        if self.env == "production":
+            return [
+                "https://a2a-ghostrider-511215.web.app",
+                "https://a2a-ghostrider-511215.firebaseapp.com",
+            ]
+        else:
+            # Local development
+            return [
+                "http://localhost:5173",  # vite dev
+                "http://localhost:4173",  # vite preview
+                "http://localhost:3000",  # alternate
+                "http://localhost:8090",  # storefront sample
+            ]
 
 
 settings = Settings()

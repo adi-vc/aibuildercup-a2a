@@ -17,9 +17,9 @@
 
 substitutions:
   _REGION: asia-south1
-  _PROJECT_ID: ${PROJECT_ID}
+  _PROJECT_ID: a2a-ghostrider-511215
   _API_SERVICE: vachan-api
-  _IMAGE: ${_REGION}-docker.pkg.dev/${_PROJECT_ID}/vachan/api
+  _IMAGE: asia-south1-docker.pkg.dev/a2a-ghostrider-511215/vachan/api
 
 steps:
 
@@ -41,7 +41,7 @@ steps:
     args:
       - build
       - -t
-      - ${_IMAGE}:${SHORT_SHA}
+      - ${_IMAGE}:${BUILD_ID}
       - -t
       - ${_IMAGE}:latest
       - ./backend
@@ -66,7 +66,7 @@ steps:
       - run
       - deploy
       - ${_API_SERVICE}
-      - --image=${_IMAGE}:${SHORT_SHA}
+      - --image=${_IMAGE}:${BUILD_ID}
       - --region=${_REGION}
       - --platform=managed
       - --allow-unauthenticated
@@ -79,7 +79,42 @@ steps:
     waitFor:
       - backend-push
 
-  # ── 5. Build the frontend ─────────────────────────────────────────────────
+  # ── 5a. Prepare the frontend ─────────────────────────────────────────────────
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    id: frontend-prep
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        cd frontend
+
+        # Get the deployed Cloud Run URL
+        API_URL=$$(gcloud run services describe ${_API_SERVICE} \
+          --project=${_PROJECT_ID} \
+          --region=${_REGION} \
+          --platform=managed \
+          --format='value(status.url)')
+        
+        if [ -z "$$API_URL" ]; then
+          echo "ERROR: Failed to get Cloud Run URL"
+          exit 1
+        fi
+        
+        echo "Building frontend with API URL: $$API_URL"
+        
+        # Create a production env file that Vite will use during build
+        echo "VITE_API_BASE_URL=$$API_URL" > .env.production
+        
+        # Verify the URL was baked in (check the built JS bundle)
+        if grep -q "$$API_URL" dist/assets/*.js; then
+          echo "✓ API URL successfully baked into bundle"
+        else
+          echo "⚠ Warning: API URL not found in bundle"
+        fi
+    waitFor:
+      - backend-deploy
+  
+  # ── 5b. Build the frontend ─────────────────────────────────────────────────
   - name: node:20-slim
     id: frontend-build
     entrypoint: bash
@@ -88,12 +123,9 @@ steps:
       - |
         cd frontend
         npm ci --silent
-        # Inject the deployed API URL so the frontend bundle points at Cloud Run
-        VITE_API_BASE_URL=$(gcloud run services describe ${_API_SERVICE} \
-          --region=${_REGION} --format='value(status.url)') \
         npm run build
     waitFor:
-      - backend-deploy
+      - frontend-prep
 
   # ── 6. Deploy frontend to Firebase Hosting ────────────────────────────────
   - name: node:20-slim
@@ -109,7 +141,7 @@ steps:
       - frontend-build
 
 images:
-  - ${_IMAGE}:${SHORT_SHA}
+  - ${_IMAGE}:${BUILD_ID}
   - ${_IMAGE}:latest
 
 timeout: 1200s

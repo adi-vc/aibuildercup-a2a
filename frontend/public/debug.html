@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vachan Debug Info</title>
+  <style>
+    body { font-family: monospace; padding: 2rem; max-width: 800px; margin: 0 auto; }
+    .info { background: #f0f0f0; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+    .label { font-weight: bold; color: #666; }
+    .value { color: #000; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>Vachan Debug Info</h1>
+  
+  <div class="info">
+    <div class="label">Current URL:</div>
+    <div class="value" id="currentUrl"></div>
+  </div>
+  
+  <div class="info">
+    <div class="label">Expected API Base (from build):</div>
+    <div class="value" id="apiBase"></div>
+  </div>
+  
+  <div class="info">
+    <div class="label">Test API Call:</div>
+    <div class="value" id="apiTest">Testing...</div>
+  </div>
+
+  <script type="module">
+    document.getElementById('currentUrl').textContent = window.location.href;
+    
+    // This will be replaced with the actual value during build
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    document.getElementById('apiBase').textContent = API_BASE;
+    
+    // Test a health check
+    fetch(`${API_BASE}/healthz`)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('apiTest').innerHTML = 
+          `✓ API reachable<br>Response: ${JSON.stringify(data, null, 2)}`;
+      })
+      .catch(err => {
+        document.getElementById('apiTest').innerHTML = 
+          `✗ API unreachable<br>Error: ${err.message}`;
+      });
+  </script>
+</body>
+</html>
