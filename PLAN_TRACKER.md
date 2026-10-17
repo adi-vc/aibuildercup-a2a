@@ -798,3 +798,30 @@ A click is also marked `committing`, so a quick pointer-leave can't cancel it.
 **Notes:**
 - Light mode was dropped: the chapter colours are the design, not a theme.
 - The monsoon photo is a 1024px source and a little soft at full width; replace it when better footage or photography exists.
+
+### T11 — Competitor review research (replica-entrepreneur)   ·   P9 pitch / research
+- Status: DONE (GO 2026-10-17 — user: "Install the skill … replica-skill … and use that skill to browse ideas and improvements")
+- Install:
+  - `Jakeschincariol/replica-skill` @ 77c9436, audited before install (markdown plus one stdlib Python ranker, `reviews.py`; no network calls);
+  - its 11 `replica-*` skills copied to `~/.claude/skills/` (global; the repo is unchanged by the install).
+- Ran `replica-entrepreneur` against HeyGen, Synthesia and Idomoo. Output is in `docs/research/replica/`:
+  - `reviews.csv` (160 rows), `feedback.md` (ranked), `themes.json` (defaults + 10 AI-video themes);
+  - `fixes.md` (three lists, fix plan F1–F7, 3 positioning angles), `features.csv` (F1–F6).
+
+**Sources and shortcuts:**
+- **Trustpilot:** 99 reviews, read through a page-reading tool, so the text is as the tool returned it. Spot-check before quoting.
+- **Hacker News:** 61 comments via the Algolia API (exact text). 106 dropped: the Synthesia piano game, job posts, off-topic.
+- **Couldn't do:** Reddit JSON returned 403; App Store RSS was empty; Idomoo has 0 Trustpilot reviews. Per-viewer-video findings are therefore **thin**.
+- **Next source:** G2/Capterra.
+
+**Findings:**
+- **Top complaints:** price/credits (30), billing (18), uncanny lip-sync (14), opaque moderation (12), voice/pronunciation (12), credits burned on the AI's mistakes (11), untrustworthy output (11).
+- **Recommended angle A, accuracy-critical teams:** "shows the source sentence behind every claim, refuses what the source doesn't support, signs what each viewer saw". Evidence: 30 reviews across 3 sources.
+  - It matches the existing headline (AGENTS.md §1), so **no change to the plan**.
+
+**Proposed follow-ups** (not started; each needs its own GO):
+- **F4:** a refusal that explains itself (S).
+- **F2:** a zero-cost edit meter (S).
+- **F1:** a grounding pre-check screen on Gate 1 (M; this is the open studio review screen).
+- **F3:** proven edits (S).
+- **F5 / F6:** a pronunciation lexicon and a locale completeness check.

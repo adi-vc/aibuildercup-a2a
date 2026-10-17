@@ -1,0 +1,7 @@
+feature,area,priority,original,clone,notes
+Grounding pre-check screen (script lines supported/unsupported with span before generation),studio,should,no,no,F1; builds on Gate 1 POST /v1/gates/{run_id}/ground + guard verifier; evidence moderation 12 / no-preview 5 / trust 11
+Zero-cost edit meter (generation seconds per change; 0 for text/price/locale layers),studio,should,no,no,F2; content-addressed vault; evidence credits-on-errors 11 / edit-loop 6
+Proven edits (manifest diff after each edit instead of a claimed confirmation),studio,could,no,no,F3; evidence false-confirmation 7 (thin, 1 source)
+Refusal explains itself (type + what the source says + what source would be needed),runtime,must,no,no,F4; refusal_type/reason already returned; evidence moderation 12
+Pronunciation lexicon per locale applied at TTS build,backend,could,no,no,F5; pipeline/tts.py SSML scaffold; evidence voice 12 / emphasis 3
+Per-locale completeness check fails the build on a missing string,backend,could,no,no,F6; evidence translation 7 mentions across 3 sources
