@@ -9,7 +9,8 @@ or if a call fails, the keyword-rules path answers with the facts' own
 published sentences, so a question never errors on stage.
 
   answered → {type: "answered", answer, facts_cited, span_ids, quotes, question_type, binding?, model_used}
-  refused  → {type: "refused", refusal_type, reason, nearest_fact, available_subjects, question, model_used}
+  refused  → {type: "refused", refusal_type, reason, nearest_fact, available_subjects, question, model_used,
+              rejected_draft}
 
 Every refusal is logged with its type (services/guard.py). The client appends
 questions and refusals to the signed play-log.
@@ -80,6 +81,8 @@ class RefusalResponse(BaseModel):
     available_subjects: list[str]
     question: str
     model_used: str
+    # Set when a model drafted an answer and the mechanical verifier threw it out: why.
+    rejected_draft: str | None = None
 
 
 # ── Facts the guard may use ──────────────────────────────────────────────────
@@ -165,6 +168,7 @@ async def ask_question(req: AskRequest) -> AnsweredResponse | RefusalResponse:
         nearest_fact=NearestFact(fact_id=nearest.id, span_id=nearest.span_id, text=nearest.text, quote=nearest.quote)
         if nearest else None,
         available_subjects=subjects, question=req.question, model_used=verdict.model_used,
+        rejected_draft=verdict.rejected,
     )
 
 

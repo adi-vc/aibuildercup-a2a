@@ -36,6 +36,8 @@ export interface RefusalResponse {
   available_subjects: string[];
   question: string;
   model_used: string;
+  /** Set when a model drafted an answer and the mechanical verifier threw it out: why. */
+  rejected_draft?: string | null;
 }
 
 export type AskResponse = AnsweredResponse | RefusalResponse;
@@ -49,6 +51,46 @@ const REFUSAL_HEADER: Record<string, string> = {
   safety: 'Ask a qualified person',
   subjective: 'A matter of taste',
   gap: 'Not in the source',
+};
+
+/**
+ * F4: a refusal explains itself. Why this kind of question can't be answered from the
+ * source, and what source would answer it (a refusal that names no reason was the
+ * commonest complaint about competing tools; docs/research/replica/fixes.md).
+ */
+const REFUSAL_WHY: Record<string, { why: string; needs: string }> = {
+  superlative_comparative: {
+    why: '“Fastest” and “best” are rankings, and the spec sheet ranks it against nothing.',
+    needs: 'A published test that names the other models would let it answer.',
+  },
+  predictive: {
+    why: 'The spec sheet documents what is true today. A promise about later can’t be checked.',
+    needs: 'A warranty or a durability test covering that period would let it answer.',
+  },
+  competitor: {
+    why: 'The source describes this product only.',
+    needs: 'Another brand’s claims need that brand’s own source.',
+  },
+  adversarial: {
+    why: 'The question asks it to say what the source doesn’t, so it repeats only what the source supports.',
+    needs: 'No instruction changes that.',
+  },
+  out_of_domain: {
+    why: 'The source is a product spec sheet, and this is about something else.',
+    needs: 'It would need a source on that subject.',
+  },
+  safety: {
+    why: 'Safety advice needs a qualified person who knows your situation.',
+    needs: 'No line in an ad can answer that safely.',
+  },
+  subjective: {
+    why: 'Taste can’t be checked against a document.',
+    needs: 'That one is yours to judge.',
+  },
+  gap: {
+    why: 'No line in the spec sheet covers this, and it says nothing it can’t point to.',
+    needs: 'A line in the spec sheet about it would let it answer.',
+  },
 };
 
 /** One-tap questions for the stage demo: a supported fact, a ranking, a prediction. */
@@ -166,8 +208,19 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
               {REFUSAL_HEADER[response.refusal_type] ?? 'Can’t answer that'}
             </p>
             <p className={styles.answerText}>{response.reason}</p>
+            {REFUSAL_WHY[response.refusal_type] && (
+              <p className={styles.why}>{REFUSAL_WHY[response.refusal_type].why}</p>
+            )}
+            {response.rejected_draft && (
+              <p className={styles.why} data-rejected-draft>
+                A drafted answer was checked against the source and thrown out: it {response.rejected_draft}.
+              </p>
+            )}
             {response.nearest_fact && (
               <p className={styles.sourceQuote}>Verified instead: “{response.nearest_fact.quote}”.</p>
+            )}
+            {REFUSAL_WHY[response.refusal_type] && (
+              <p className={styles.sourceQuote}>{REFUSAL_WHY[response.refusal_type].needs}</p>
             )}
           </div>
         )}

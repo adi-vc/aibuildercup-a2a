@@ -64,7 +64,7 @@ The house style, measured by taste-skill's inspector.
 ## Hooks that must not change
 
 Tests and browser checks rely on these:
-- `data-beat`, `data-edge`, `data-rung`, `data-refusal-type`, `aria-label`s;
+- `data-beat`, `data-edge`, `data-rung`, `data-refusal-type`, `data-swap`, `data-rejected-draft`, `aria-label`s;
 - the `#locale-select` / `#city-select` ids and option values (now inline in the viewer sentence);
 - button names ("End play & view receipt", "Drag up: …", "Ask", "Verify signature", the three suggested questions).
 

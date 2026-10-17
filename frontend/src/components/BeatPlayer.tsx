@@ -13,7 +13,7 @@
  */
 
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePlayLog } from '../runtime/usePlayLog';
 import type { SignedPlayRecord } from '../runtime/playlog';
 import { profileHash } from '../runtime/playlog';
@@ -25,6 +25,7 @@ import { CITIES } from '../runtime/profile';
 import { useBindings } from '../runtime/useBindings';
 import type { BindingResolution } from '../runtime/bindings';
 import { embedSnippet } from '../runtime/embed';
+import { describeSwap, swapCost } from '../runtime/swapCost';
 import { RuntimePlayer } from './RuntimePlayer';
 import { QuestionPanel, type AskResponse } from './QuestionPanel';
 import styles from './BeatPlayer.module.css';
@@ -45,6 +46,9 @@ const RUNG_LABEL: Record<BindingResolution['rung'], string> = {
 };
 
 const LOCALE_NAMES: Record<string, string> = { 'en-IN': 'English', 'hi-IN': 'हिन्दी', 'kn-IN': 'ಕನ್ನಡ' };
+/** The language's English name, for the sentence about a swap ("hi-IN" → "Hindi"). */
+const languageName = (locale: string) =>
+  new Intl.DisplayNames(['en'], { type: 'language' }).of(locale.split('-')[0]) ?? locale;
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -87,6 +91,22 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
   const [receipt, setReceipt] = useState<SignedPlayRecord | null>(null);
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const [currentProfileHash, setCurrentProfileHash] = useState<string>('');
+  // F2: a swap re-composes the same pictures; say so, measured to the next frame.
+  const swapStart = useRef<{ prev: ViewerProfile; t0: number } | null>(null);
+  const [swapLine, setSwapLine] = useState<string | null>(null);
+
+  useEffect(() => {
+    const start = swapStart.current;
+    if (!start) return;
+    const cost = swapCost(manifest, start.prev, profile);
+    if (!cost) return;
+    const city = CITIES.find((c) => c.id === profile.city)?.label ?? profile.city;
+    const raf = requestAnimationFrame(() => {
+      swapStart.current = null;
+      setSwapLine(describeSwap(cost, languageName(profile.locale), city, performance.now() - start.t0));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [manifest, profile]);
 
   // The guard gets the current (coarse, PII-free) profile hash; recompute on a locale/city swap.
   useEffect(() => {
@@ -120,7 +140,10 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
     );
   }
 
-  const set = (patch: Partial<ViewerProfile>) => onProfileChange?.({ ...profile, ...patch });
+  const set = (patch: Partial<ViewerProfile>) => {
+    swapStart.current = { prev: profile, t0: performance.now() };
+    onProfileChange?.({ ...profile, ...patch });
+  };
   const onLocale = (e: React.ChangeEvent<HTMLSelectElement>) => set({ locale: e.target.value });
   const onCity = (e: React.ChangeEvent<HTMLSelectElement>) => set({ city: e.target.value });
 
@@ -172,6 +195,9 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
               ))}
             </ul>
           )}
+          <p className={styles.swapLine} aria-live="polite" data-swap={swapLine ? 'composed' : undefined}>
+            {swapLine}
+          </p>
         </div>
       </section>
 

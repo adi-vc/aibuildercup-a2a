@@ -107,6 +107,13 @@
   overflow-wrap: anywhere;
 }
 
+/* F2: what a swap cost. Space is reserved so the first swap doesn't move the page. */
+.swapLine {
+  min-height: 1.5em;
+  color: var(--accent);
+  font-weight: 500;
+}
+
 /* ── Sources: large marks on tiles ──────────────────────────────────────── */
 
 .board {

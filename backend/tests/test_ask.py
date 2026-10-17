@@ -167,3 +167,17 @@ def test_number_reading_covers_grouping_words_and_devanagari():
     assert guard.numbers_in("1 year") == {1.0}
     assert guard.safe_calc("500 / 128") == pytest.approx(3.90625)
     assert guard.safe_calc("__import__('os')") is None
+
+
+def test_refusal_says_why_a_drafted_answer_was_thrown_out(manifest_id, monkeypatch):
+    """T12 / F4: the viewer sees the verifier's reason, not just "refused"."""
+    import app.routers.ask as ask_router
+    monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+    monkeypatch.setattr(ask_router, "_gemini_call", fake(
+        {"question_type": "supported", "answer": "It does 150 km per charge.", "fact_ids": ["f_range"]}))
+    data = ask(manifest_id, "How far does it go?")
+    assert data["type"] == "refused" and "numbers" in data["rejected_draft"]
+
+
+def test_rules_refusal_has_no_rejected_draft(manifest_id):
+    assert ask(manifest_id, "Is it the fastest in India?")["rejected_draft"] is None

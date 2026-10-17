@@ -109,6 +109,11 @@
   text-wrap: pretty;
 }
 
+.why {
+  max-width: 60ch;
+  text-wrap: pretty;
+}
+
 .sourceQuote {
   color: var(--field-blue-soft);
 }

@@ -825,3 +825,24 @@ A click is also marked `committing`, so a quick pointer-leave can't cancel it.
 - **F1:** a grounding pre-check screen on Gate 1 (M; this is the open studio review screen).
 - **F3:** proven edits (S).
 - **F5 / F6:** a pronunciation lexicon and a locale completeness check.
+
+### T12 — Cheapest high-value fixes from T11: F4 refusal explains itself + F2 zero-cost swap meter   ·   P7 / P5 polish
+- Status: DONE (GO 2026-10-17 — user: "do the edits which have the most benefit and least effort")
+- Why these two: smallest (S) items in the T11 fix plan, both on the demo path, and they make the mechanism visible. The evidence is opaque moderation (12 reviews), credits on errors (11) and the edit loop (6).
+
+**F4 — a refusal explains itself** (`QuestionPanel.tsx`):
+- Under the in-character refusal, two more sentences: *why* this kind of question can't be answered from the source, and *what source would answer it* (one pair per §30 type).
+- Backend, additive: `RefusalResponse.rejected_draft` (optional). When a model drafted an answer and the mechanical verifier threw it out, the viewer sees why: "A drafted answer was checked against the source and thrown out: it states numbers not in the cited facts: 150."
+- The verifier reasons were reworded as verb phrases and number lists formatted ("150", not "[150.0]"). Same checks, same test substrings.
+
+**F2 — a zero-cost swap meter** (`runtime/swapCost.ts` + test, `BeatPlayer.tsx`):
+- After a city or language swap, the Watch chapter says what it cost, counted from the manifest and timed to the next frame. For example: "That change cost no generation: 9 text layers re-set in Hindi, the same 11 pictures reused, re-composed in 19 ms."
+- **Divergence:** the plan item was a *studio* edit meter. There is no studio editing screen yet, so it is shown on the viewer swap, which is the demo moment. The studio version can reuse `swapCost`.
+
+**Verification:**
+- **Tests:** pytest 160/160 (+2: `rejected_draft` via a dishonest fake model, and `None` on the rules path). vitest 44/44 (+4). `tsc` and `eslint` are clean. taste-skill lint is unchanged: 0 FAIL / 1 WARN.
+- **Chromium:**
+  - city and language swaps show the line; warm timings are 13–20 ms. One cold first city swap in Vite dev read 439 ms.
+  - "Is it the fastest in India?" shows the reason, the bounded substitution and what would answer it, at 1280 and 390.
+  - A mocked `rejected_draft` renders.
+- New hooks: `data-swap`, `data-rejected-draft`.

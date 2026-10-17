@@ -148,12 +148,12 @@ def verify_answer(answer: str, fact_ids: list[str], facts: dict[str, CanonFact],
                     cite one fact and talk about something else.
     """
     if not answer.strip():
-        return "empty answer"
+        return "is empty"
     if not fact_ids:
-        return "answer cites no fact"
+        return "cites no fact"
     unknown = [f for f in fact_ids if f not in facts]
     if unknown:
-        return f"cites facts that are not canon with a verified span: {unknown}"
+        return f"cites facts that are not canon with a verified span: {', '.join(unknown)}"
     allowed: set[float] = numbers_in(question)
     for fid in fact_ids:
         f = facts[fid]
@@ -161,15 +161,15 @@ def verify_answer(answer: str, fact_ids: list[str], facts: dict[str, CanonFact],
     if calc:
         operands = numbers_in(calc)
         if not operands or not all(_close(n, allowed) for n in operands):
-            return f"arithmetic '{calc}' uses numbers not in the cited facts or the question"
+            return f"uses arithmetic '{calc}' with numbers not in the cited facts or the question"
         result = safe_calc(calc)
         if result is None:
-            return f"arithmetic '{calc}' is not plain + − × ÷"
+            return f"uses arithmetic '{calc}' that is not plain + − × ÷"
         # The answer may state the result exactly, rounded to 1–2 places, or as a whole number.
         allowed |= {result, round(result, 1), round(result, 2), float(round(result)), float(-(-result // 1))}
     stray = sorted(n for n in numbers_in(answer) if not _close(n, allowed))
     if stray:
-        return f"states numbers not in the cited facts: {stray}"
+        return f"states numbers not in the cited facts: {', '.join(f'{n:g}' for n in stray)}"
     support = set()
     for fid in fact_ids:
         f = facts[fid]
@@ -179,7 +179,7 @@ def verify_answer(answer: str, fact_ids: list[str], facts: dict[str, CanonFact],
     for sentence in re.split(r"(?<=[.!?।])\s+", answer.strip()):
         content = _tokens(sentence)
         if content and not content & support:
-            return f"sentence not supported by the cited facts: {sentence!r}"
+            return f"has a sentence not supported by the cited facts: {sentence!r}"
     return None
 
 
