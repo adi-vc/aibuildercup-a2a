@@ -53,3 +53,6 @@ htmlcov/
 
 # Playwright MCP screenshots/snapshots (local verification evidence)
 .playwright-mcp/
+
+# playwright-cli session logs/snapshots
+.playwright-cli/

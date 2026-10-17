@@ -31,15 +31,19 @@ interface Props {
 }
 
 const RUNG_LABEL: Record<BindingResolution['rung'], string> = {
-  1: 'live',
-  2: 'stale (last known)',
-  3: 'published fact',
-  4: 'neutral wording',
+  1: 'Live',
+  2: 'Last known',
+  3: 'As published',
+  4: 'Neutral wording',
 };
+
+const LOCALE_NAMES: Record<string, string> = { 'en-IN': 'English', 'hi-IN': 'हिन्दी', 'kn-IN': 'ಕನ್ನಡ' };
+
+const clock = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
 function describeSource(r: BindingResolution): string {
   switch (r.source.kind) {
-    case 'binding': return `${r.source.resolver} @ ${r.source.resolved_at}`;
+    case 'binding': return `${r.source.resolver} · ${clock(r.source.resolved_at)}`;
     case 'binding_stale': return `${r.source.resolver}, ${r.source.age_s}s old`;
     case 'fact': return `${r.source.fact_id} → ${r.source.span_id}`;
     case 'omitted': return 'no live value, no published fact for this city';
@@ -108,51 +112,80 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
 
   return (
     <div className={styles.player}>
-      <div className={styles.controls}>
-        <label htmlFor="locale-select" className={styles.controlLabel}>Locale</label>
-        <select id="locale-select" value={profile.locale} onChange={onLocale} className={styles.select}>
-          {manifest.locales.map((l) => <option key={l} value={l}>{l}</option>)}
-        </select>
-        {manifest.bindings.length > 0 && (
-          <>
-            <label htmlFor="city-select" className={styles.controlLabel}>City</label>
-            <select id="city-select" value={profile.city} onChange={onCity} className={styles.select}>
-              {CITIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-            </select>
-          </>
+      <section className={styles.main} aria-label="Player">
+        <div className={styles.stage}>
+          <RuntimePlayer
+            manifest={manifest}
+            locale={profile.locale}
+            bindings={bindings}
+            entryBeat={profile.entry_beat}
+            onBeatChange={playLog.onBeatChange}
+          />
+        </div>
+        {receipt && <Receipt record={receipt} manifest={manifest} onClose={() => setReceipt(null)} />}
+      </section>
+
+      <aside className={styles.inspector} aria-label="Viewer and provenance">
+        <section className={styles.card}>
+          <h2 className={styles.cardTitle}>Viewer</h2>
+          <div className={styles.controls}>
+            <label htmlFor="locale-select" className={styles.field}>
+              <span className={styles.controlLabel}>Language</span>
+              <select id="locale-select" value={profile.locale} onChange={onLocale} className={styles.select}>
+                {manifest.locales.map((l) => <option key={l} value={l}>{LOCALE_NAMES[l] ?? l}</option>)}
+              </select>
+            </label>
+            {manifest.bindings.length > 0 && (
+              <label htmlFor="city-select" className={styles.field}>
+                <span className={styles.controlLabel}>City</span>
+                <select id="city-select" value={profile.city} onChange={onCity} className={styles.select}>
+                  {CITIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              </label>
+            )}
+          </div>
+        </section>
+
+        {Object.values(bindings).length > 0 && (
+          <section className={styles.card}>
+            <h2 className={styles.cardTitle}>Live values</h2>
+            <ul className={styles.bindingReadout} aria-label="Binding resolution">
+              {Object.values(bindings).map((r) => (
+                <li key={r.key} data-rung={r.rung}>
+                  <span className={styles.bindingKey}>{r.key}</span>
+                  <span className={styles.bindingRung}>
+                    <span className={styles.dot} aria-hidden="true" />
+                    {RUNG_LABEL[r.rung]} <span className={styles.rungNo}>· rung {r.rung}</span>
+                  </span>
+                  <code className={styles.bindingSource}>{describeSource(r)}</code>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
-        <span className={styles.manifestId}>
-          manifest: <code>{manifest.manifest_id}</code> · {manifest.beats.length} beats
-        </span>
-      </div>
 
-      <div className={styles.stage}>
-        <RuntimePlayer
-          manifest={manifest}
-          locale={profile.locale}
-          bindings={bindings}
-          entryBeat={profile.entry_beat}
-          onBeatChange={playLog.onBeatChange}
-        />
-      </div>
+        <section className={styles.card}>
+          <button type="button" className={styles.primaryButton} onClick={endPlay}>End play &amp; view receipt</button>
+          <p className={styles.hint}>Signs a receipt of exactly what this viewer saw.</p>
+          {receiptError && <p className={styles.receiptError} role="alert">{receiptError}</p>}
+        </section>
 
-      {Object.values(bindings).length > 0 && (
-        <ul className={styles.bindingReadout} aria-label="Binding resolution">
-          {Object.values(bindings).map((r) => (
-            <li key={r.key} data-rung={r.rung}>
-              <code>{r.key}</code> · rung {r.rung} ({RUNG_LABEL[r.rung]}) · <span>{describeSource(r)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className={styles.receiptBar}>
-        <button type="button" className={styles.copyButton} onClick={endPlay}>End play &amp; view receipt</button>
-        {receiptError && <span className={styles.receiptError}>{receiptError}</span>}
-      </div>
-      {receipt && <Receipt record={receipt} manifest={manifest} onClose={() => setReceipt(null)} />}
-
-      <EmbedSnippet manifestId={manifest.manifest_id} profile={profile} />
+        <section className={styles.card}>
+          <dl className={styles.meta}>
+            <dt>Manifest</dt>
+            <dd><code translate="no">{manifest.manifest_id}</code></dd>
+            <dt>Beats</dt>
+            <dd>{manifest.beats.length}</dd>
+            {version && (
+              <>
+                <dt>Version</dt>
+                <dd><code translate="no">{version.slice(0, 10)}</code></dd>
+              </>
+            )}
+          </dl>
+          <EmbedSnippet manifestId={manifest.manifest_id} profile={profile} />
+        </section>
+      </aside>
 
       <QuestionPanel
         manifestId={manifest.manifest_id}

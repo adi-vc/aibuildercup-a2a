@@ -261,9 +261,18 @@ export function RuntimePlayer({ manifest, locale, bindings, entryBeat, autoPlay 
                 onPointerMove={onDragMove}
                 onPointerUp={onDragEnd}
                 onPointerCancel={onDragEnd}
+                // Keyboard alternative to the gesture: Enter/Space plays the edge and commits.
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClickCommit(edge)();
+                  }
+                }}
                 aria-label={`Drag up: ${edge.label}`}
+                title="Drag up, or press Enter"
               >
-                ↑ Drag up · {edge.label}
+                <span className={styles.glyph} aria-hidden="true">↑</span>
+                Drag up · {edge.label}
               </button>
             ) : (
               <button
@@ -274,7 +283,8 @@ export function RuntimePlayer({ manifest, locale, bindings, entryBeat, autoPlay 
                 onPointerLeave={onHoverEnd}
                 onClick={onClickCommit(edge)}
               >
-                ▶ {edge.label}
+                <span className={styles.glyph} aria-hidden="true">▶</span>
+                {edge.label}
               </button>
             ),
           )}

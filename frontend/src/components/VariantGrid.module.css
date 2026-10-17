@@ -1,64 +1,96 @@
-/* VariantGrid.module.css — the metric-3 grid and its network ledger. */
+/* VariantGrid.module.css — metric 3: many viewers, one manifest, and the
+   network ledger that proves zero generation. */
 
 .wrap {
-  width: 100%;
-  max-width: 1400px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  gap: var(--space-6);
 }
 
 .summary {
-  margin: 0;
-  font-size: 15px;
-  color: #ccc;
+  font-size: var(--text-xl);
+  font-weight: 400;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-2);
+  max-width: 60ch;
+  text-wrap: balance;
+}
+
+.summary strong {
+  color: var(--text-1);
+  font-weight: 500;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
 }
 
 .cell {
   margin: 0;
-  border-radius: 6px;
+  padding: 4px;
+  border-radius: calc(var(--radius-md) + 4px);
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+  transition: border-color var(--dur) var(--ease);
+}
+
+.cell:hover {
+  border-color: var(--hairline-strong);
+}
+
+.cell > div:first-child {
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background: #151515;
-  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .cell figcaption {
-  padding: 6px 8px;
-  font-size: 11px;
-  color: #999;
+  padding: 10px 8px 6px;
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+.ledger {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
 }
 
 .ledger h2 {
-  margin: 8px 0;
-  font-size: 15px;
-  color: #ddd;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-md);
+  font-weight: 500;
 }
 
 .ledger table {
+  width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
-  color: #bbb;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger th {
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-3);
 }
 
 .ledger th,
 .ledger td {
-  text-align: left;
-  padding: 4px 12px 4px 0;
-  border-bottom: 1px solid #262626;
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--hairline);
 }
 
 .bad td {
-  color: #ff6b6b;
-  font-weight: 700;
+  color: var(--warn);
+  font-weight: 500;
 }
 
 .note {
-  color: #888;
-  font-size: 13px;
+  color: var(--text-3);
+  font-size: var(--text-sm);
 }

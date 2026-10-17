@@ -49,7 +49,8 @@ function FactBadge({ factId, manifest }: { factId: string; manifest: Manifest })
         aria-expanded={open}
         aria-label={`View source for ${factId}`}
       >
-        ✓ verified
+        <span className={styles.check} aria-hidden="true">✓</span>
+        Verified
       </button>
       {open && (
         <div className={styles.badgePanel} role="tooltip">
@@ -111,6 +112,9 @@ function PlateLayer({ beat, manifest, env }: Pick<CompositionProps, 'manifest' |
     <Img
       src={plateSrc}
       className={styles.plate}
+      width={1280}
+      height={720}
+      alt=""
       style={{ transform: `scale(${scale})` }}
       maxRetries={1}
       onLoad={() => markFirstFrame(beat.id, 'plate')}
@@ -180,7 +184,7 @@ function EdgeClip({ edge, frames, manifest, locale, env }: { edge: Edge; frames:
       {clip && clipsAllowed ? (
         <Html5Video src={clip.uri} muted className={styles.plate} />
       ) : target ? (
-        <Img src={target.uri} className={styles.plate} />
+        <Img src={target.uri} className={styles.plate} width={1280} height={720} alt="" />
       ) : (
         <AbsoluteFill className={styles.platePlaceholder} />
       )}

@@ -162,6 +162,8 @@ Detailed runbook: [`docs/HOSTED_VALIDATION_RUNBOOK.md`](docs/HOSTED_VALIDATION_R
 
 ## Where things live
 
+> **UI:** the frontend follows [`frontend/DESIGN.md`](frontend/DESIGN.md) (tokens in `frontend/src/styles/tokens.css`) — read it before adding UI (T10).
+
 | Area | Files |
 |---|---|
 | Binding ladder | `frontend/src/runtime/bindings.ts` |

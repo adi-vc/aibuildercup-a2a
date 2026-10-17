@@ -27,27 +27,45 @@ export default function App() {
     loadProfile(window.location.search).then(setProfile);
   }, []);
 
+  const params = new URLSearchParams(window.location.search);
+  params.delete('variants');
+  const playerHref = `?${params}`;
+  params.set('variants', '1');
+  const variantsHref = `?${params}`;
+
   return (
     <div className="app">
+      <a className="skip-link" href="#main">Skip to player</a>
       <header className="app-header">
-        <h1 className="app-title">Vachan <span className="app-phase">· P5</span></h1>
+        <a className="brand" href={playerHref} aria-label="Vachan, player">
+          <svg className="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 5h4.2L12 15.6 16.8 5H21l-7.4 15h-3.2z" />
+          </svg>
+          <span className="brand-name" translate="no">Vachan</span>
+        </a>
         <p className="app-subtitle">
-          {SHOW_VARIANTS ? 'One manifest, every viewer — zero generation at play-time' : 'Generated once, composed per viewer'}
+          {SHOW_VARIANTS ? 'One manifest, every viewer. Zero generation at play-time.' : 'Generated once, composed for each viewer.'}
         </p>
+        <nav className="app-nav" aria-label="Views">
+          <a href={playerHref} aria-current={SHOW_VARIANTS ? undefined : 'page'}>Player</a>
+          <a href={variantsHref} aria-current={SHOW_VARIANTS ? 'page' : undefined}>Variants</a>
+        </nav>
       </header>
 
-      <main className="app-main">
+      <main className="app-main" id="main" tabIndex={-1}>
+        <h1 className="sr-only">{SHOW_VARIANTS ? 'Vachan variants' : 'Vachan player'}</h1>
         {loading && (
-          <div className="state-message">
-            Loading manifest <code>{MANIFEST_ID}</code>…
+          <div className="state-skeleton" aria-busy="true" aria-label={`Loading manifest ${MANIFEST_ID}…`}>
+            <div className="skeleton-stage" />
+            <div className="skeleton-side" />
           </div>
         )}
 
         {error && (
-          <div className="state-message state-error">
-            <strong>Error:</strong> {error}
-            <br />
-            <small>Is the API running? (<code>docker compose up</code> or <code>uvicorn app.main:app</code>)</small>
+          <div className="state-message state-error" role="alert">
+            <strong>Couldn't load manifest <code>{MANIFEST_ID}</code>.</strong>
+            <p>{error}</p>
+            <p className="state-hint">Check the API is running: <code>uvicorn app.main:app --port 8080</code>.</p>
           </div>
         )}
 

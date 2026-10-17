@@ -41,14 +41,14 @@ export interface RefusalResponse {
 export type AskResponse = AnsweredResponse | RefusalResponse;
 
 const REFUSAL_HEADER: Record<string, string> = {
-  superlative_comparative: '⚖️ Only what\'s verified',
-  predictive: '🔮 Can\'t promise the future',
-  competitor: '🏷️ Other brands',
-  adversarial: '🛡️ Sticking to the source',
-  out_of_domain: 'ℹ️ Off topic',
-  safety: '⚠️ Ask a qualified person',
-  subjective: '💭 A matter of taste',
-  gap: '⚠️ Not in the source',
+  superlative_comparative: 'Only what’s verified',
+  predictive: 'Can’t promise the future',
+  competitor: 'Other brands',
+  adversarial: 'Sticking to the source',
+  out_of_domain: 'Off topic',
+  safety: 'Ask a qualified person',
+  subjective: 'A matter of taste',
+  gap: 'Not in the source',
 };
 
 interface Props {
@@ -122,7 +122,8 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
           onClick={() => setIsOpen(true)}
           aria-label="Ask a question"
         >
-          Ask ❓
+          <span className={styles.openDot} aria-hidden="true" />
+          Ask the source
         </button>
       ) : (
         <div className={styles.panel}>
@@ -140,16 +141,21 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
             </button>
           </div>
 
+          <div aria-live="polite">
           {!response ? (
             <form onSubmit={handleSubmit} className={styles.form}>
               <input
                 type="text"
+                name="question"
+                autoComplete="off"
+                aria-label="Your question"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="e.g., What's the warranty?"
+                placeholder="Ask about range, charging, price…"
                 className={styles.input}
                 maxLength={500}
                 disabled={loading}
+                // Single primary input in a panel the viewer just opened.
                 autoFocus
               />
               <button
@@ -157,12 +163,12 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
                 className={styles.submitButton}
                 disabled={loading || !question.trim()}
               >
-                {loading ? 'Asking...' : 'Ask'}
+                {loading ? 'Asking…' : 'Ask'}
               </button>
             </form>
           ) : response.type === 'answered' ? (
             <div className={styles.answer}>
-              <div className={styles.answerHeader}>Answer</div>
+              <div className={styles.answerHeader}>Answered from the source</div>
               <p className={styles.answerText}>{response.answer}</p>
               {response.quotes.map((q) => (
                 <p key={q.fact_id} className={styles.sourceQuote}>
@@ -192,7 +198,7 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
           ) : (
             <div className={styles.refusal}>
               <div className={styles.refusalHeader} data-refusal-type={response.refusal_type}>
-                {REFUSAL_HEADER[response.refusal_type] ?? '⚠️ Cannot answer'}
+                {REFUSAL_HEADER[response.refusal_type] ?? 'Can’t answer that'}
               </div>
               <p className={styles.refusalReason}>{response.reason}</p>
               {response.nearest_fact && (
@@ -217,6 +223,8 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
               </button>
             </div>
           )}
+
+          </div>
 
           {error && (
             <div className={styles.error}>

@@ -111,7 +111,7 @@ export function Receipt({ record, manifest, onClose }: { record: SignedPlayRecor
         </div>
       </div>
 
-      <footer className={styles.integrity}>
+      <footer className={styles.integrity} aria-live="polite">
         <span>signature <code>{short(record.signature)}</code></span>
         <span>prev <code>{short(record.prev_hash)}</code></span>
         <span>key <code>{record.key_id}</code></span>

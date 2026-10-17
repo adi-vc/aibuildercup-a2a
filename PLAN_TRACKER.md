@@ -688,3 +688,63 @@ A click is also marked `committing`, so a quick pointer-leave can't cancel it.
 **Follow-ups:**
 - Redeploy and re-validate T8 on Cloud Run (register updated to ⚠️).
 - Measure the first-token p95 on the hosted Gemini path.
+
+### T10 — Design skills + cinematic redesign   ·   P9 polish (UI)
+- Status: DONE (GO 2026-10-17 — user: "install these design skills and make this project more aesthetic and modern"; plan approved)
+- Dates: opened 2026-10-17
+- Goal: a stage-ready UI in which the video is the hero. Dark-first "cinematic automotive" direction, with principles borrowed from the Tesla/BMW DESIGN.md references (not their brand). Studio chrome and in-video layers are restyled; behaviour, selectors and data contracts are unchanged.
+
+**Skills installed (global, `~/.claude/skills/`; the repo is unchanged by the install):**
+- Taste Skill: all 13, incl. image-to-code.
+- `web-design-guidelines` (vercel-labs).
+- `playwright-cli` 0.1.22, with its skill.
+- Awesome Design is not a skill: `design-md/tesla/DESIGN.md` was read as a reference only.
+- Reviewed before use: taste-skill ships Node scripts (local screenshot inspector; public-domain image search). There are no uploads of project data. `web-design-guidelines` fetches its rules from GitHub on each run.
+
+**Audit (before shots, `redesign-existing-projects` skill):**
+- **Layout:** the Vite starter `index.css` still owns `#root` (fixed 1126px, side borders that turn white in light mode); the header carries a dev label "· P5".
+- **Typography:** system font everywhere; uppercase badges/tags.
+- **Colour:** a purple→blue gradient "Ask ❓" pill, and a **white** ask panel on a dark page; the manifest chip is unreadable in light mode.
+- **Debug feel:** a dashed debug readout with a raw ISO timestamp; tiny grey actions; emoji headers.
+- **Mobile:** the player controls cover the copy and price at 390px.
+
+**Done / changed (frontend only; backend untouched):**
+- **Design system:**
+  - `src/styles/tokens.css` (carbon dark-first + light parity, one amber accent, ok/warn status colours, 8px grid, radii, a single motion curve, `--controls-clearance`) and `src/styles/base.css` (reset, focus rings, fixed film grain, reduced motion, skip link, `.sr-only`).
+  - These replace the Vite starter `index.css`; the unused starter `src/assets/` is removed.
+- **Fonts:** Geist, Geist Mono and Noto Sans Devanagari, self-hosted via `@fontsource` (OFL, unicode-range subsets). Inter, Roboto and the like are banned per taste-skill. Hindi renders in Noto Devanagari (`document.fonts.check` true).
+- **Studio:**
+  - an inset header with a mark, sub-title and a Player/Variants nav with `aria-current`;
+  - a stage tray + sticky inspector: Viewer selects (same ids/values, now "English / हिन्दी" labels), live-value provenance with rung dots and formatted time, an accent "End play & view receipt", manifest identity, embed;
+  - a skeleton loading state; direct error copy.
+- **In-video:** a left-aligned cinematic lower third (Geist 500, balanced wraps); price in tabular figures in the accent with a sentence-case tag; frosted-glass "Verified" pills and quote panel; a typographic spec sheet; affordance pills with accent glyphs.
+- **Ask panel:** a dark glass panel replaces the purple gradient button + white card. Clear answered/refused states with status dots, text labels instead of emoji, source quote / "Verified instead".
+- **Receipt and variants:** restyled on tokens.
+- **Also:** a new favicon (our own V mark), meta description, and `theme-color` per scheme. `frontend/DESIGN.md` documents the system and its rules for the next contributor.
+- **Audit:** the `web-design-guidelines` findings were fixed:
+  - skip link + `<h1>`;
+  - `translate="no"` on brand and IDs;
+  - "…" in placeholders and loading states;
+  - input `name` / `autocomplete`;
+  - `aria-live` on guard answers and receipt checks;
+  - explicit `color` on selects;
+  - `width`/`height`/`alt` on plates;
+  - `touch-action` on pills;
+  - a **keyboard alternative for the drag-up gesture** (Enter/Space commits the branch).
+
+  Skipped on purpose: "Title Case headings/buttons", which conflicts with the redesign skill's sentence case.
+
+**Verification:**
+- **Before/after screenshots** via `playwright-cli`: player dark/light, ask refused/answered, receipt, variants, mobile 390px, Hindi, spec branch.
+- **Regressions (in the browser):**
+  - drag scrubs forward/back (0.27→1.37→0.53 s);
+  - cancel returns to `b_flood`, commit → `b_spec_overlay`, **keyboard Enter → `b_spec_overlay`**;
+  - click edge: hover preview → leave restores → click commits;
+  - the receipt verifies.
+- **First frame (cold, third-party storefront):** unthrottled p95 **109 ms** (was 121); Fast 3G p95 **1.76 s** (was 1.72 s, still < 2 s; fonts add ~40 ms).
+- **Checks:** 38/38 vitest; `tsc`, `eslint` and the build are clean; backend suite rerun as a guard.
+
+**Couldn't do / notes:**
+- **Global install:** the skills are on this machine only, so `frontend/DESIGN.md` carries the rules to your friend.
+- **image-to-code** expects the agent to generate design images (written for Codex), which isn't available here; unused.
+- **Placeholder visuals:** the placeholder plates/clips remain; they are the T9 curation's job.
