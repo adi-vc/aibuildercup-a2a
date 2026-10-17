@@ -70,13 +70,13 @@ export function Receipt({ record, manifest, onClose }: { record: SignedPlayRecor
       <header className={styles.head}>
         <h2>Receipt</h2>
         <span>play <code>{record.play_id}</code> · #{record.seq + 1} for <code>{record.manifest_id}</code></span>
-        <button type="button" className={styles.close} onClick={onClose} aria-label="Close receipt">×</button>
+        <button type="button" className={styles.close} onClick={onClose} aria-label="Close receipt">Close</button>
       </header>
 
       <div className={styles.grid}>
         <div>
           <h3>Claims shown ({claims.size})</h3>
-          {claims.size === 0 ? <p className={styles.muted}>None — mood beats only.</p> : (
+          {claims.size === 0 ? <p className={styles.muted}>None. Mood beats only.</p> : (
             <ul>
               {[...claims].map(([fid, span]) => (
                 <li key={fid}>
@@ -116,15 +116,15 @@ export function Receipt({ record, manifest, onClose }: { record: SignedPlayRecor
         <span>prev <code>{short(record.prev_hash)}</code></span>
         <span>key <code>{record.key_id}</code></span>
         <button type="button" onClick={verify}>Verify signature</button>
-        {sig === 'ok' && <b className={styles.ok}>✓ verifies</b>}
-        {sig === 'fail' && <b className={styles.bad}>✗ does not verify</b>}
+        {sig === 'ok' && <b className={styles.ok}>Signature verifies</b>}
+        {sig === 'fail' && <b className={styles.bad}>Signature does not verify</b>}
         <button type="button" onClick={checkChain}>Verify chain</button>
         {chain && (chain.ok
-          ? <b className={styles.ok}>✓ {chain.count} {chain.count === 1 ? 'play' : 'plays'} chained</b>
-          : <b className={styles.bad}>✗ chain broken at #{(chain.failures[0]?.seq ?? 0) + 1}</b>)}
+          ? <b className={styles.ok}>{chain.count} {chain.count === 1 ? 'play' : 'plays'} chained</b>
+          : <b className={styles.bad}>Chain broken at play {(chain.failures[0]?.seq ?? 0) + 1}</b>)}
         <button type="button" onClick={tryTamper}>Try tampering</button>
-        {tamper === 'fail' && <b className={styles.ok}>✓ altered copy rejected</b>}
-        {tamper === 'ok' && <b className={styles.bad}>✗ altered copy verified</b>}
+        {tamper === 'fail' && <b className={styles.ok}>Altered copy rejected</b>}
+        {tamper === 'ok' && <b className={styles.bad}>Altered copy verified</b>}
       </footer>
     </section>
   );

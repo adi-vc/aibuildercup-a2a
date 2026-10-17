@@ -1,5 +1,5 @@
 /**
- * QuestionPanel.tsx — Claim guard UI (P7).
+ * QuestionPanel.tsx — Claim guard UI (P7), set inline in the Ask chapter.
  *
  * Allows viewers to ask questions about the product. Answers are generated
  * from verified facts only, and unsupported questions are refused on screen.
@@ -51,6 +51,9 @@ const REFUSAL_HEADER: Record<string, string> = {
   gap: 'Not in the source',
 };
 
+/** One-tap questions for the stage demo: a supported fact, a ranking, a prediction. */
+const SUGGESTIONS = ['Does it handle flooded roads?', 'Is it the fastest in India?', 'Will it last ten years?'];
+
 interface Props {
   manifestId: string;
   locale: string;
@@ -62,16 +65,13 @@ interface Props {
 }
 
 export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUrl, onQuestionAsked }: Props) {
-  const [isOpen, setIsOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<AskResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!question.trim()) return;
+  const ask = async (q: string) => {
+    if (!q.trim()) return;
     
     setLoading(true);
     setError(null);
@@ -83,7 +83,7 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           manifest_id: manifestId,
-          question: question.trim(),
+          question: q.trim(),
           locale,
           city,
           profile_hash: profileHash,
@@ -99,7 +99,7 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
       setResponse(data);
       
       // Notify parent (for play-log recording)
-      onQuestionAsked?.(question.trim(), data);
+      onQuestionAsked?.(q.trim(), data);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to ask question');
@@ -108,130 +108,75 @@ export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUr
     }
   };
 
-  const handleReset = () => {
-    setQuestion('');
-    setResponse(null);
-    setError(null);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void ask(question);
+  };
+
+  const trySuggestion = (q: string) => {
+    setQuestion(q);
+    void ask(q);
   };
 
   return (
     <div className={styles.container}>
-      {!isOpen ? (
-        <button
-          className={styles.openButton}
-          onClick={() => setIsOpen(true)}
-          aria-label="Ask a question"
-        >
-          <span className={styles.openDot} aria-hidden="true" />
-          Ask the source
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <input
+          type="text"
+          name="question"
+          autoComplete="off"
+          aria-label="Your question"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Ask about range, charging, price…"
+          className={styles.input}
+          maxLength={500}
+          disabled={loading}
+        />
+        <button type="submit" className={styles.submitButton} disabled={loading || !question.trim()}>
+          {loading ? 'Asking…' : 'Ask'}
         </button>
-      ) : (
-        <div className={styles.panel}>
-          <div className={styles.header}>
-            <h3>Ask a question</h3>
-            <button
-              className={styles.closeButton}
-              onClick={() => {
-                setIsOpen(false);
-                handleReset();
-              }}
-              aria-label="Close"
-            >
-              ×
-            </button>
+      </form>
+
+      <p className={styles.suggestions}>
+        <span>Try</span>
+        {SUGGESTIONS.map((q) => (
+          <button key={q} type="button" className={styles.suggestion} onClick={() => trySuggestion(q)} disabled={loading}>
+            {q}
+          </button>
+        ))}
+      </p>
+
+      <div aria-live="polite">
+        {response?.type === 'answered' && (
+          <div className={styles.answer}>
+            <p className={styles.status} data-status="answered">Answered from the source</p>
+            <p className={styles.answerText}>{response.answer}</p>
+            {response.quotes.map((q) => (
+              <p key={q.fact_id} className={styles.sourceQuote}>
+                The spec sheet says “{q.quote}”.
+              </p>
+            ))}
           </div>
+        )}
 
-          <div aria-live="polite">
-          {!response ? (
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <input
-                type="text"
-                name="question"
-                autoComplete="off"
-                aria-label="Your question"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask about range, charging, price…"
-                className={styles.input}
-                maxLength={500}
-                disabled={loading}
-                // Single primary input in a panel the viewer just opened.
-                autoFocus
-              />
-              <button
-                type="submit"
-                className={styles.submitButton}
-                disabled={loading || !question.trim()}
-              >
-                {loading ? 'Asking…' : 'Ask'}
-              </button>
-            </form>
-          ) : response.type === 'answered' ? (
-            <div className={styles.answer}>
-              <div className={styles.answerHeader}>Answered from the source</div>
-              <p className={styles.answerText}>{response.answer}</p>
-              {response.quotes.map((q) => (
-                <p key={q.fact_id} className={styles.sourceQuote}>
-                  Source: “{q.quote}” <small>({q.span_id})</small>
-                </p>
-              ))}
-              
-              {response.facts_cited.length > 0 && (
-                <div className={styles.citations}>
-                  <div className={styles.citationsLabel}>
-                    Based on {response.facts_cited.length} verified fact{response.facts_cited.length > 1 ? 's' : ''}
-                  </div>
-                  <div className={styles.factBadges}>
-                    {response.facts_cited.map((factId) => (
-                      <span key={factId} className={styles.factBadge} title={factId}>
-                        ✓ {factId.replace('f_', '').replace(/_/g, ' ')}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <button onClick={handleReset} className={styles.askAnotherButton}>
-                Ask another question
-              </button>
-            </div>
-          ) : (
-            <div className={styles.refusal}>
-              <div className={styles.refusalHeader} data-refusal-type={response.refusal_type}>
-                {REFUSAL_HEADER[response.refusal_type] ?? 'Can’t answer that'}
-              </div>
-              <p className={styles.refusalReason}>{response.reason}</p>
-              {response.nearest_fact && (
-                <p className={styles.sourceQuote}>
-                  Verified instead: “{response.nearest_fact.quote}” <small>({response.nearest_fact.span_id})</small>
-                </p>
-              )}
-              
-              {!response.nearest_fact && response.available_subjects.length > 0 && (
-                <div className={styles.availableTopics}>
-                  <div className={styles.availableLabel}>I can answer questions about:</div>
-                  <ul className={styles.topicList}>
-                    {response.available_subjects.slice(0, 5).map((subject) => (
-                      <li key={subject}>{subject.replace(/_/g, ' ')}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              <button onClick={handleReset} className={styles.askAnotherButton}>
-                Ask another question
-              </button>
-            </div>
-          )}
-
+        {response && response.type !== 'answered' && (
+          <div className={styles.refusal}>
+            <p className={styles.status} data-status="refused" data-refusal-type={response.refusal_type}>
+              {REFUSAL_HEADER[response.refusal_type] ?? 'Can’t answer that'}
+            </p>
+            <p className={styles.answerText}>{response.reason}</p>
+            {response.nearest_fact && (
+              <p className={styles.sourceQuote}>Verified instead: “{response.nearest_fact.quote}”.</p>
+            )}
           </div>
+        )}
+      </div>
 
-          {error && (
-            <div className={styles.error}>
-              <strong>Error:</strong> {error}
-            </div>
-          )}
-        </div>
+      {error && (
+        <p className={styles.error} role="alert">
+          The question didn’t reach the guard: {error}
+        </p>
       )}
     </div>
   );

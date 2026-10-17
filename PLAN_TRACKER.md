@@ -748,3 +748,53 @@ A click is also marked `committing`, so a quick pointer-leave can't cancel it.
 - **Global install:** the skills are on this machine only, so `frontend/DESIGN.md` carries the rules to your friend.
 - **image-to-code** expects the agent to generate design images (written for Codex), which isn't available here; unused.
 - **Placeholder visuals:** the placeholder plates/clips remain; they are the T9 curation's job.
+
+### T10.1 — "Colour chapters" redesign (taste-skill)   ·   P9 polish (UI)
+- Status: DONE (GO 2026-10-17 — user: "it still looks a bit like streamlit"; direction chosen from three dealt options)
+- Why: T10 restyled the chrome but kept a dashboard structure. The taste-skill gate on T10 read **24 FAIL / 26 WARN** (lint) and **4 FAIL / 5 WARN** (inspector):
+  - 19 outlined boxes, 5 glass panels, shadows at rest, 48% monospace text;
+  - hero media at 42% of the first screen;
+  - low-contrast labels.
+- Direction (`draw.mjs`, seed 1440003606): **colour chapters**, palette "ultramarine and yellow" (+ black, green accent), type Jost.
+  - The palette is kept as dealt because it *is* the subject's own colour: the monsoon sky and Mumbai's black-and-yellow taxis.
+- Idea: *the 30 cm waterline becomes the seam between two colour fields*; the video sits across it.
+- Adaptations, with reasons:
+  - hero headline reduced so the player stays dominant on stage;
+  - Jost self-hosted, not from a CDN (embed cold start);
+  - Noto Sans Devanagari kept for Hindi;
+  - "large marks on tiles" carries the 8 verified facts;
+  - "first step, already open" carries the receipt;
+  - the floating ask panel becomes an inline chapter (house rule: no floating glass).
+- Pictures, all credited on the page:
+  - "And it Rains in Mumbai!!" — AbhijeetRane, CC BY 2.0;
+  - "Mumbai taxi on the road" — Vyacheslav Argenberg, CC BY 4.0;
+  - "Street-bangalore-2" — Paper Jewels, CC BY 4.0.
+
+**Done / changed (frontend only):**
+- **Five chapters** replace the stage-plus-inspector dashboard:
+  - **Watch:** "Every word, kept." The player sits across the waterline seam; the viewer is a sentence with the inline city/language selects (same ids) and the live-price provenance.
+  - **Sources:** a taxi-yellow board, with a green heading tile, the taxis photo and 8 fact tiles (figure + verbatim quote, from `integrity.facts`).
+  - **Ask:** the guard is inline, with a large field, a square green Ask and three one-tap stage questions. The floating glass panel is gone.
+  - **Receipt:** "Signed for you", with the paper receipt as a `data-ui` fragment.
+  - **Embed:** the code snippet, the Bangalore postcard, a full-width wordmark and photo credits.
+- **Header:** a plain fixed bar (wordmark, chapter links, one green action) that takes each chapter's colour.
+- **Variants page:** three chapters.
+- **Video layers:** bold capital copy, taxi-yellow price, solid green "Verified" tiles, solid black panels.
+- **Phone:** one Play/Pause button under the frame replaces Remotion's overlay bar, which covered 54% of a 390px player.
+- **Code:** new `runtime/useChapters.ts`, `runtime/factMark.ts` (+2 tests), `content/world.ts`. Jost replaces Geist and Geist Mono.
+
+**Verification:**
+- **taste-skill lint:** 24 FAIL / 26 WARN → **0 FAIL / 1 WARN** (a hex hash's zero padding).
+- **taste-skill inspector:** 4 FAIL / 5 WARN → **0 FAIL / 2 WARN**, both defended: font-size count comes from the ad's own scaled copy; "no footage", because the hero is the product's moving picture. Hero media went from 42% to **60%** of the first screen.
+- **Regressions (Chromium):**
+  - drag-scrub forward/back, cancel, keyboard commit;
+  - suggestion → bounded-substitution refusal; typed question → answer;
+  - receipt signs 1 question + 1 refusal and verifies;
+  - inline city swap;
+  - mobile Play/Pause.
+- **Tests:** 40/40 vitest; `tsc`, `eslint` and the build are clean.
+- **Cold first frame (third-party storefront):** p95 105 ms unthrottled, 1.76 s Fast 3G (unchanged).
+
+**Notes:**
+- Light mode was dropped: the chapter colours are the design, not a theme.
+- The monsoon photo is a 1024px source and a little soft at full width; replace it when better footage or photography exists.

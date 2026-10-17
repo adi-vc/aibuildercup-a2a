@@ -56,3 +56,6 @@ htmlcov/
 
 # playwright-cli session logs/snapshots
 .playwright-cli/
+
+# taste-skill working files (inspector screenshots, direction sheet, found assets cache)
+.taste-skill/

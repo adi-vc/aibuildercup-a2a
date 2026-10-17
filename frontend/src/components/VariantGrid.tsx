@@ -8,6 +8,7 @@
  */
 
 import { Thumbnail } from '@remotion/player';
+import type React from 'react';
 import { useEffect, useState } from 'react';
 import { fetchManifest, resolveBindings } from '../api/client';
 import type { Manifest } from '../types/manifest';
@@ -69,7 +70,13 @@ export function VariantGrid({ manifest }: { manifest: Manifest }) {
     return () => { cancelled = true; };
   }, [manifest, cache]);
 
-  if (resolvedAt === null) return <div className={styles.note}>Resolving bindings for {CITIES.length} cities…</div>;
+  if (resolvedAt === null) {
+    return (
+      <section className="chapter" data-field="blue" aria-busy="true">
+        <p className="lead">Resolving prices for {CITIES.length} cities…</p>
+      </section>
+    );
+  }
 
   const variants = manifests.flatMap((m) =>
     m.locales.flatMap((locale) => CITIES.map((city) => ({ m, locale, city }))),
@@ -77,54 +84,60 @@ export function VariantGrid({ manifest }: { manifest: Manifest }) {
   const generationCalls = ledger.filter((r) => r.generation).reduce((n, r) => n + r.count, 0);
 
   return (
-    <div className={styles.wrap}>
-      <p className={styles.summary}>
-        <strong>{variants.length} variants</strong> from {manifests.length} manifest{manifests.length > 1 ? 's' : ''}
-        {' '}({manifests.map((m) => m.manifest_id).join(', ')}) ·{' '}
-        <strong data-testid="generation-calls">{generationCalls} generation calls</strong>
-      </p>
+    <>
+      <section className={`chapter ${styles.intro}`} data-field="blue" aria-labelledby="variants-title">
+        <h1 id="variants-title" className="display" data-reveal>
+          {variants.length} viewers. <span data-testid="generation-calls">{generationCalls} generation calls.</span>
+        </h1>
+        <p className="lead" data-reveal style={{ '--i': 1 } as React.CSSProperties}>
+          Every city and language below is composed live from {manifests.length === 1 ? 'one manifest' : `${manifests.length} manifests`}{' '}
+          ({manifests.map((m) => m.manifest_id).join(', ')}). Nothing is generated at play-time.
+        </p>
+      </section>
 
-      <div className={styles.grid}>
-        {variants.map(({ m, locale, city }) => {
-          const bound = m.beats.find((b) => b.bindings.length > 0) ?? m.beats[0];
-          const bindings = cache.resolveAll(m, city.id, locale, resolvedAt);
-          const path = spinePath(m);
-          const tl = timeline(m, path);
-          return (
-            <figure key={`${m.manifest_id}|${locale}|${city.id}`} className={styles.cell}>
-              <Thumbnail
-                component={VachanComposition}
-                inputProps={{ manifest: m, locale, bindings, env, path }}
-                compositionWidth={WIDTH}
-                compositionHeight={HEIGHT}
-                durationInFrames={totalFrames(tl)}
-                fps={FPS}
-                frameToDisplay={posterFrame(tl, bound.id)}
-                style={{ width: '100%' }}
-              />
-              <figcaption>
-                {city.label} · {locale}{m.policy.kids_mode ? ' · kids' : ''} · rung {bindings.price?.rung ?? '–'}
-              </figcaption>
-            </figure>
-          );
-        })}
-      </div>
+      <section className="chapter" data-field="black" aria-label="Variants">
+        <div className={styles.grid}>
+          {variants.map(({ m, locale, city }) => {
+            const bound = m.beats.find((b) => b.bindings.length > 0) ?? m.beats[0];
+            const bindings = cache.resolveAll(m, city.id, locale, resolvedAt);
+            const path = spinePath(m);
+            const tl = timeline(m, path);
+            return (
+              <figure key={`${m.manifest_id}|${locale}|${city.id}`} className={styles.cell}>
+                <Thumbnail
+                  component={VachanComposition}
+                  inputProps={{ manifest: m, locale, bindings, env, path }}
+                  compositionWidth={WIDTH}
+                  compositionHeight={HEIGHT}
+                  durationInFrames={totalFrames(tl)}
+                  fps={FPS}
+                  frameToDisplay={posterFrame(tl, bound.id)}
+                  style={{ width: '100%' }}
+                />
+                <figcaption>
+                  {city.label} · {locale}{m.policy.kids_mode ? ' · kids' : ''} · rung {bindings.price?.rung ?? '–'}
+                </figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      </section>
 
-      <section className={styles.ledger} aria-label="Network ledger">
-        <h2>Network ledger</h2>
+      <section className={`chapter ${styles.ledger}`} data-field="yellow" aria-labelledby="ledger-title">
+        <h2 id="ledger-title" className="headline">Every request this page made.</h2>
         {ledger.length === 0 ? <p className={styles.note}>Collecting…</p> : (
           <table>
-            <thead><tr><th>request</th><th>count</th><th>generation?</th></tr></thead>
+            <thead><tr><th>Request</th><th>Count</th><th>Generation?</th></tr></thead>
             <tbody>
               {ledger.map((r) => (
                 <tr key={r.path} className={r.generation ? styles.bad : undefined}>
-                  <td><code>{r.path}</code></td><td>{r.count}</td><td>{r.generation ? 'YES' : 'no'}</td>
+                  <td><code translate="no">{r.path}</code></td><td>{r.count}</td><td>{r.generation ? 'Yes' : 'No'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </section>
-    </div>
+    </>
   );
 }

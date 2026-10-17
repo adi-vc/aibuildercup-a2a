@@ -8,7 +8,7 @@ body,
   height: 100%;
   background: #0b0c0e;
   overflow: hidden;
-  font-family: var(--font-sans);
+  font-family: var(--font);
 }
 
 .embed-message {

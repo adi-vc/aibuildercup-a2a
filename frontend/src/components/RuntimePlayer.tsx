@@ -14,7 +14,7 @@
  */
 
 import { Player, type PlayerRef } from '@remotion/player';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { Edge, Manifest } from '../types/manifest';
 import type { BindingResolution } from '../runtime/bindings';
 import { VachanComposition } from '../runtime/composition';
@@ -58,10 +58,35 @@ interface Gesture {
   ready: boolean;
 }
 
+/** Phone-width stages: Remotion's overlay controls would cover half the frame there. */
+const COMPACT_QUERY = '(max-width: 600px)';
+const subscribeCompact = (cb: () => void) => {
+  const mq = window.matchMedia(COMPACT_QUERY);
+  mq.addEventListener('change', cb);
+  return () => mq.removeEventListener('change', cb);
+};
+const isCompact = () => window.matchMedia(COMPACT_QUERY).matches;
+
 export function RuntimePlayer({ manifest, locale, bindings, entryBeat, autoPlay = false, style, onBeatChange }: Props) {
   const [env] = useState(() => readEnvironment(window.location.search));
   const entry = entryBeat ?? manifest.beats.find((b) => !b.branch_only)?.id ?? '';
   const playerRef = useRef<PlayerRef>(null);
+  const compact = useSyncExternalStore(subscribeCompact, isCompact, () => false);
+  const [playing, setPlaying] = useState(autoPlay);
+
+  // Keep the compact play/pause button's label in step with the player.
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    player.addEventListener('play', onPlay);
+    player.addEventListener('pause', onPause);
+    return () => {
+      player.removeEventListener('play', onPlay);
+      player.removeEventListener('pause', onPause);
+    };
+  }, [compact]);
   const stageRef = useRef<HTMLDivElement>(null);
   const [path, setPath] = useState<Segment[]>(() => spinePath(manifest));
   const tl = useMemo(() => timeline(manifest, path), [manifest, path]);
@@ -242,7 +267,8 @@ export function RuntimePlayer({ manifest, locale, bindings, entryBeat, autoPlay 
         compositionWidth={WIDTH}
         compositionHeight={HEIGHT}
         style={{ width: '100%', ...style }}
-        controls
+        // On phones the overlay controls would cover half the video; a plain button below replaces them.
+        controls={!compact}
         loop
         autoPlay={autoPlay}
         initiallyMuted
@@ -288,6 +314,17 @@ export function RuntimePlayer({ manifest, locale, bindings, entryBeat, autoPlay 
               </button>
             ),
           )}
+        </div>
+      )}
+      {compact && (
+        <div className={styles.compactBar}>
+          <button
+            type="button"
+            className={styles.compactButton}
+            onClick={() => (playing ? playerRef.current?.pause() : playerRef.current?.play())}
+          >
+            {playing ? 'Pause' : 'Play'}
+          </button>
         </div>
       )}
     </div>

@@ -8,7 +8,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { EmbedApp } from './components/EmbedApp';
 import { registerServiceWorker } from './runtime/serviceWorker';
-import '@fontsource-variable/geist';
+import '@fontsource-variable/jost';
 import '@fontsource-variable/noto-sans-devanagari';
 import './styles/tokens.css';
 import './embed.css';

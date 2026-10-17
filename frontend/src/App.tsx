@@ -6,13 +6,14 @@
  *   ?variants=1      the metric-3 variant grid + network ledger
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useManifest } from './hooks/useManifest';
 import { BeatPlayer } from './components/BeatPlayer';
 import { VariantGrid } from './components/VariantGrid';
 import type { ViewerProfile } from './types/manifest';
 import { DEFAULT_PROFILE } from './types/manifest';
 import { loadProfile } from './runtime/profile';
+import { useChapters } from './runtime/useChapters';
 import './App.css';
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -27,46 +28,44 @@ export default function App() {
     loadProfile(window.location.search).then(setProfile);
   }, []);
 
+  const header = useRef<HTMLElement>(null);
+  useChapters(header, [manifest, SHOW_VARIANTS]);
+
   const params = new URLSearchParams(window.location.search);
   params.delete('variants');
   const playerHref = `?${params}`;
   params.set('variants', '1');
   const variantsHref = `?${params}`;
+  const chapter = (id: string) => (SHOW_VARIANTS ? `${playerHref}#${id}` : `#${id}`);
 
   return (
     <div className="app">
       <a className="skip-link" href="#main">Skip to player</a>
-      <header className="app-header">
-        <a className="brand" href={playerHref} aria-label="Vachan, player">
-          <svg className="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 5h4.2L12 15.6 16.8 5H21l-7.4 15h-3.2z" />
-          </svg>
-          <span className="brand-name" translate="no">Vachan</span>
-        </a>
-        <p className="app-subtitle">
-          {SHOW_VARIANTS ? 'One manifest, every viewer. Zero generation at play-time.' : 'Generated once, composed for each viewer.'}
-        </p>
-        <nav className="app-nav" aria-label="Views">
-          <a href={playerHref} aria-current={SHOW_VARIANTS ? undefined : 'page'}>Player</a>
+      <header className="site-header" ref={header} data-field="blue">
+        <a className="wordmark" href={playerHref} translate="no" aria-label="Vachan, player">Vachan</a>
+        <nav className="site-nav" aria-label="Chapters">
+          <a href={chapter('watch')}>Watch</a>
+          <a href={chapter('sources')}>Sources</a>
+          <a href={chapter('ask')}>Ask</a>
+          <a href={chapter('receipt')}>Receipt</a>
           <a href={variantsHref} aria-current={SHOW_VARIANTS ? 'page' : undefined}>Variants</a>
         </nav>
+        <a className="header-action" href={chapter('embed')}>Get the embed</a>
       </header>
 
-      <main className="app-main" id="main" tabIndex={-1}>
-        <h1 className="sr-only">{SHOW_VARIANTS ? 'Vachan variants' : 'Vachan player'}</h1>
+      <main id="main" tabIndex={-1}>
         {loading && (
-          <div className="state-skeleton" aria-busy="true" aria-label={`Loading manifest ${MANIFEST_ID}…`}>
-            <div className="skeleton-stage" />
-            <div className="skeleton-side" />
-          </div>
+          <section className="chapter loading" data-field="blue" aria-busy="true" aria-label={`Loading manifest ${MANIFEST_ID}…`}>
+            <p className="lead">Loading the ad…</p>
+          </section>
         )}
 
         {error && (
-          <div className="state-message state-error" role="alert">
-            <strong>Couldn't load manifest <code>{MANIFEST_ID}</code>.</strong>
-            <p>{error}</p>
-            <p className="state-hint">Check the API is running: <code>uvicorn app.main:app --port 8080</code>.</p>
-          </div>
+          <section className="chapter" data-field="black" role="alert">
+            <h1 className="headline">The ad didn’t load.</h1>
+            <p className="lead error-detail">{error}</p>
+            <p>Check the API is running: <code>uvicorn app.main:app --port 8080</code>.</p>
+          </section>
         )}
 
         {manifest && (SHOW_VARIANTS ? (
