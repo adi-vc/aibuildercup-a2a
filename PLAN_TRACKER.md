@@ -38,7 +38,7 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 |---|---|---|---|
 | T1 · P0 walking skeleton | ✅ `DONE` | GCP project `a2a-ghostrider-511215` / Firebase Hosting | 2026-10-10: Source upload to GCS operational; API deployed and accessible |
 | T2 · P1 Brain + Gemini | ✅ `DONE` | Firestore + Cloud Run (`a2a-ghostrider-511215`) | 2026-10-10: Gate 1 edit persisted across restart · 2026-10-11: Gemini extraction (`gemini-3.8-flash`) verified with 8 facts extracted |
-| T8 · P7 Claim guard | ✅ `DONE` | Cloud Run (`a2a-ghostrider-511215`) | 2026-10-11: End-to-end `/v1/ask` operational with Gemini `gemini-3.8-flash`; refusal question tested ("What's the charging speed?" refused with type: off_topic); play-log signed with questions/refusals structure; receipt verification passed (seq:1, signature verified, key_id:064460c0d3bf) |
+| T8 · P7 Claim guard | ⚠️ `RE-VALIDATE` | Cloud Run (`a2a-ghostrider-511215`) | 2026-10-11 run predates T8.1: its "charging speed" refusal was a false refusal (the source states the charge time), and the deployed guard 500s on planner-built manifests. Redeploy T8.1 and re-run `evals/run_refusal.py --gemini` against the hosted key. |
 
 ## Entry template (copy this per task)
 
@@ -56,6 +56,8 @@ Use [docs/HOSTED_VALIDATION_RUNBOOK.md](docs/HOSTED_VALIDATION_RUNBOOK.md) for e
 ---
 
 ## Current task
+
+**T8.1 (audit fix: branch repaired, claim guard rebuilt to §64.9) is `DONE` (2026-10-17)** — the hosted guard needs a redeploy + `evals/run_refusal.py --gemini` re-run (see register).
 
 **T9 (P4 Vault curated assets) is `IN PROGRESS`.** Infrastructure complete: pipeline scaffolds written (bible, image_gen, depth, vision_check, tts, vault_uploader), upload script ready, vault_staging/ directories created, documentation complete (ASSET_CURATION_GUIDE.md, T9_QUICK_START.md). **Next: manual asset curation** via Gemini Playground (6 plates), MiDaS web demo (6 depth maps), Cloud TTS console (16 audio phrases), Figma/Canva (3-5 badges). Estimated 3-5 hours for full curation + upload + planner update + test. Minimum viable: 6 plates only = ~2 hours.
 
@@ -448,7 +450,7 @@ A click is also marked `committing`, so a quick pointer-leave can't cancel it.
 ---
 
 ### T8 — Claim guard (the refusal moment)   ·   P7 / F7 F24
-- Status: DONE
+- Status: DONE → superseded by **T8.1** (audit, 2026-10-17: guard rebuilt to §64.9; see T8.1)
 - Dates: opened 2026-10-10 · GO 2026-10-10 · updated 2026-10-10
 - Goal: Build `/v1/ask` endpoint and refusal UI — the signature mechanism where a viewer asks a question and the system refuses anything unsupported. Slides 8–9, "the most memorable mechanism" per HANDOFF.md. Exit criteria per §64.9:
   1. ✅ A viewer asks "What's the warranty?" → streams an answer drawn from facts with quote + source span shown.
@@ -623,3 +625,66 @@ A click is also marked `committing`, so a quick pointer-leave can't cancel it.
 **Blockers / follow-ups:**
 - None — can start after T8.
 - If time is very short, **T9 can be cut entirely** — placeholder assets (T7 clips + SVG plates) are sufficient to demo the mechanism. Real assets are polish, not proof.
+
+
+### T8.1 — Repair the branch + claim guard to spec   ·   audit fix (P7, §64.9)
+- Status: DONE
+- Dates: opened 2026-10-17 · GO 2026-10-17 (user: "can we repair this?") · updated 2026-10-17
+- Why: an audit of `4157792` found the branch red and T8 not meeting §64.9.
+  - 21/144 backend tests failed: `run_brain_build` was made async without updating 19 tests, plus 2 guard tests.
+  - Frontend lint had 2 errors (`usePlayLog` handed out a ref during render).
+  - `/v1/ask` returned **500 on every planner-built manifest**: it read `manifest["source_id"]`, which no manifest has.
+  - The guard's own output decided everything: refusal was detected by phrase-matching Gemini's text; an answer citing no fact was still shown; numbers were never checked. That breaks AGENTS.md §7.
+  - The hosted "charging speed → off_topic" result was a false refusal of a supported fact.
+  - T8's exit criteria had been replaced; §64.9's (10/10, 0 fabrications, spans, templates, bounded substitution) were never measured.
+- T9 (manual asset curation) stays `IN PROGRESS` on its own track; no code overlap.
+
+**Exit criteria (§64.9):**
+1. ✅ **20-question set (§62):** **10/10 unsupported refused, 0 fabrications, 20/20 correct by type** — `python evals/run_refusal.py` (rules path) and `tests/test_ask.py::test_refusal_set…`. ⚠️ The Gemini path has not been run: no key on this machine. Run `evals/run_refusal.py --gemini` with the hosted key.
+2. ✅ **Every answer's `fact_ids` resolve to spans.** The guard loads only canon facts with spans; every cited fact returns `span_id` + verbatim `quote`.
+3. ⚠️ **First tokens < 2 s (p95):** the rules path answers in milliseconds; the Gemini path is unmeasured and not streamed.
+4. ✅ **Every refusal is logged with its type** (server log), and signed into the play-log as one of the 12 §30 types; the server rejects unknown types.
+5. ✅ **Bounded substitution:** "Is it the fastest in India?" → *"I can only tell you what's verified: 0–60 km/h in 8.2 seconds, from the product spec sheet."*, with the span. "Will it last ten years?" → refused, with the warranty offered.
+
+**Done / changed:**
+- **Repair:**
+  - Tests use a sync `build_brain()` helper around the async build.
+  - `usePlayLog` exposes stable `recordQuestion` / `recordRefusal` callbacks.
+  - `BeatPlayer` computes the profile hash in an effect, so it follows locale/city swaps (it used to run once inside `useState`).
+- **`backend/app/services/guard.py`** (new, pure), following §42:
+  1. **Classify** into the 12 §30 types — Gemini structured output at temperature 0 (`guard_model`), or keyword rules (§32.1 #11) when there is no key or the call fails / returns junk. The guard never 500s.
+  2. **Answer** from the **whole** canon set (§42.3, no retrieval). Price questions are answered deterministically from the §24.2 ladder (live → as published), never by the model. Derived answers must declare `calc`, which the server re-computes.
+  3. **Verify mechanically:**
+     - at least one citation, each canon with a span;
+     - **every number** in the answer must appear in the cited facts or the question, or be the re-computed `calc` result (Indian grouping, number words and Devanagari digits are read);
+     - each sentence must share content words with what it cites.
+     - A failed answer is never shown; it becomes a gap refusal, with the reason logged.
+  4. **Refuse** with the §20 templates in character, attaching the nearest verified fact.
+  - Model overrides: injections are always adversarial, and the manifest's competitor exclusions always route to the competitor template.
+- **`routers/ask.py`** (rewritten, thin):
+  - Facts are found via manifest → `brain_version` → Brain run → source (no schema change), falling back to `integrity.facts` for fixtures.
+  - New optional `city`.
+  - Response: `answered {answer, facts_cited, span_ids, quotes, question_type, binding?, model_used}` | `refused {refusal_type(_id), reason, nearest_fact, available_subjects, model_used}`.
+- **Other backend:** `bindings.resolve_live()` for the guard; `config.guard_model`.
+- **Play-log:** questions/refusals are typed models (`extra=forbid`); refusal types are validated against the 12.
+- **`evals/`:** `refusal_set.json` (the §62 set) and `run_refusal.py` (per-type table, independent re-verification for the fabrication count, `--gemini` mode, non-zero exit on failure).
+- **Frontend:** `QuestionPanel` handles the new shape, sends `city`, shows the source quote under answers and "Verified instead: …" under refusals, with per-type headers.
+- **Browser-verified end to end:**
+  - flooded roads → answered with the approved beat copy + span;
+  - fastest → bounded substitution;
+  - price in Bengaluru → live ₹1,27,400;
+  - receipt shows *questions: 2 · refusals: 1*, and the signature verifies.
+- **Tests:** **158/158 backend** (21 new guard tests, including scripted *dishonest* model fakes: invented number, no citation, unknown fact, off-topic sentence, wrong arithmetic, relabelled injection, malformed JSON). **38/38 vitest**; lint, types and build are clean.
+
+**Couldn't do / shortcuts:**
+- **Gemini path unverified locally** (no key): the dishonest-fake tests prove the verifier, not Gemini's classification quality. Run `--gemini` against the hosted key before the demo.
+- **The sentence-overlap check is a floor, not a proof:** a fluent model sentence reusing a fact's words while changing its meaning, with no new number, can pass. Numbers are checked exactly.
+- **Rules-path limits:**
+  - English keyword rules; Hindi questions mostly classify via the facts' numbers/words only.
+  - Derived answers cover one shape ("how many charges for N km"); other derived questions refuse as a gap.
+  - `TOPICS` vocabulary is per-product configuration.
+- **Not done:** no streaming; types 5/9/12 are covered by templates/tests but not in the 20-question set.
+
+**Follow-ups:**
+- Redeploy and re-validate T8 on Cloud Run (register updated to ⚠️).
+- Measure the first-token p95 on the hosted Gemini path.

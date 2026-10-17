@@ -1,5 +1,6 @@
 """P3 planner tests — each §64.5 exit criterion is mechanically asserted."""
 
+import asyncio
 import pytest
 
 from app.models.brain import BeatEdit, GateGroundPayload, GatePlanPayload
@@ -7,6 +8,11 @@ from app.pipeline.brain_builder import apply_gate_ground, run_brain_build
 from app.pipeline.planner import apply_gate_plan, get_plan_manifest, run_plan_build
 from app.services.brain_store import get_store, reset_store
 from manifest_schema.linter import ManifestLinter
+
+
+def build_brain(source_id: str, gcs_path: str):
+    """run_brain_build is async (non-blocking Gemini calls); run it to completion here."""
+    return asyncio.run(run_brain_build(source_id, gcs_path))
 
 
 SOURCE_ID = "src_test_p3"
@@ -21,7 +27,7 @@ def fresh_store():
 
 
 def approved_brain() -> None:
-    brain_run = run_brain_build(SOURCE_ID, GCS_PATH)
+    brain_run = build_brain(SOURCE_ID, GCS_PATH)
     apply_gate_ground(brain_run.id, GateGroundPayload())
 
 

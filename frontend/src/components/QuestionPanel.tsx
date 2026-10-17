@@ -16,27 +16,52 @@ export interface AnsweredResponse {
   answer: string;
   facts_cited: string[];
   span_ids: string[];
+  /** The verified source span behind each cited fact. */
+  quotes: { fact_id: string; span_id: string; quote: string }[];
+  question_type: string;
+  question_type_id: number;
+  /** Set for price answers: which §24.2 rung produced the value. */
+  binding?: { rung: number } | null;
   model_used: string;
 }
 
 export interface RefusalResponse {
-  type: 'unsupported' | 'off_topic';
+  type: 'refused';
+  /** One of the §30 types, e.g. superlative_comparative, gap, predictive. */
+  refusal_type: string;
+  refusal_type_id: number;
   reason: string;
+  /** The closest supported fact, offered instead (§20, type 3's bounded substitution). */
+  nearest_fact: { fact_id: string; span_id: string; text: string; quote: string } | null;
   available_subjects: string[];
   question: string;
+  model_used: string;
 }
 
 export type AskResponse = AnsweredResponse | RefusalResponse;
 
+const REFUSAL_HEADER: Record<string, string> = {
+  superlative_comparative: '⚖️ Only what\'s verified',
+  predictive: '🔮 Can\'t promise the future',
+  competitor: '🏷️ Other brands',
+  adversarial: '🛡️ Sticking to the source',
+  out_of_domain: 'ℹ️ Off topic',
+  safety: '⚠️ Ask a qualified person',
+  subjective: '💭 A matter of taste',
+  gap: '⚠️ Not in the source',
+};
+
 interface Props {
   manifestId: string;
   locale: string;
+  /** Viewer's city, so a price question follows the same binding ladder as the screen. */
+  city?: string;
   profileHash: string;
   apiBaseUrl: string;
   onQuestionAsked?: (question: string, response: AskResponse) => void;
 }
 
-export function QuestionPanel({ manifestId, locale, profileHash, apiBaseUrl, onQuestionAsked }: Props) {
+export function QuestionPanel({ manifestId, locale, city, profileHash, apiBaseUrl, onQuestionAsked }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<AskResponse | null>(null);
@@ -60,6 +85,7 @@ export function QuestionPanel({ manifestId, locale, profileHash, apiBaseUrl, onQ
           manifest_id: manifestId,
           question: question.trim(),
           locale,
+          city,
           profile_hash: profileHash,
         }),
       });
@@ -138,6 +164,11 @@ export function QuestionPanel({ manifestId, locale, profileHash, apiBaseUrl, onQ
             <div className={styles.answer}>
               <div className={styles.answerHeader}>Answer</div>
               <p className={styles.answerText}>{response.answer}</p>
+              {response.quotes.map((q) => (
+                <p key={q.fact_id} className={styles.sourceQuote}>
+                  Source: “{q.quote}” <small>({q.span_id})</small>
+                </p>
+              ))}
               
               {response.facts_cited.length > 0 && (
                 <div className={styles.citations}>
@@ -160,12 +191,17 @@ export function QuestionPanel({ manifestId, locale, profileHash, apiBaseUrl, onQ
             </div>
           ) : (
             <div className={styles.refusal}>
-              <div className={styles.refusalHeader}>
-                {response.type === 'unsupported' ? '⚠️ Cannot answer' : 'ℹ️ Off topic'}
+              <div className={styles.refusalHeader} data-refusal-type={response.refusal_type}>
+                {REFUSAL_HEADER[response.refusal_type] ?? '⚠️ Cannot answer'}
               </div>
               <p className={styles.refusalReason}>{response.reason}</p>
+              {response.nearest_fact && (
+                <p className={styles.sourceQuote}>
+                  Verified instead: “{response.nearest_fact.quote}” <small>({response.nearest_fact.span_id})</small>
+                </p>
+              )}
               
-              {response.available_subjects.length > 0 && (
+              {!response.nearest_fact && response.available_subjects.length > 0 && (
                 <div className={styles.availableTopics}>
                   <div className={styles.availableLabel}>I can answer questions about:</div>
                   <ul className={styles.topicList}>

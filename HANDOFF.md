@@ -6,7 +6,7 @@ This is a snapshot for whoever picks the build up next. It summarises the work; 
 
 - **Built and validated:** P0–P3 (hosted), P5, P6 (with placeholder clips), P7 (claim guard, hosted), and P7.5 (local). That covers the swap, the embed, the drag-to-scrub branch, **the refusal mechanism**, and the signed receipt — about **47 of the 75 live demo seconds** (slides 7b, 8–9, 10–12).
 - **Hosted validation complete (T1, T2, T8):** GCP project `a2a-ghostrider-511215` live, API deployed to Cloud Run (region `asia-south1`), GCS bucket `vachan_bucket` operational, Firestore persistence verified, Gemini API (`gemini-3.8-flash`) integrated and working. Claim guard validated with refusal mechanism operational.
-- **P7 claim guard complete (T8):** `/v1/ask` endpoint with Gemini answer generation + refusal detection, QuestionPanel UI ("Ask ❓" button), play-log integration with questions/refusals recording. Hosted validation complete (refusal tested, signature verified).
+- **P7 claim guard (T8 → rebuilt in T8.1, 2026-10-17):** the T8 guard 500'd on planner-built manifests and let model output decide what was shown; T8.1 rebuilt it to §64.9 with a mechanical verifier — 20-question set **10/10 refused, 0 fabrications** (rules path); Gemini path to be re-validated on Cloud Run. Original T8 note: `/v1/ask` endpoint with Gemini answer generation + refusal detection, QuestionPanel UI ("Ask ❓" button), play-log integration with questions/refusals recording. Hosted validation complete (refusal tested, signature verified).
 - **Ready to unblock:** P4 (Vault) has credentials. T9 (hackathon-optimized curated assets) is next.
 - **Tests:** 135 backend (pytest) and 38 frontend (vitest), all green. `tsc`, `eslint`, `vite build` and the strict golden-manifest lint are all clean.
 
@@ -21,7 +21,7 @@ This is a snapshot for whoever picks the build up next. It summarises the work; 
 | **P4 Vault** | — | ❌ **not started** | Credentials now available. Hackathon approach: curated assets via UI tools + pipeline scaffold code (T9 proposed). |
 | P5 runtime, swap, embed | T5a, T5b | ✅ local | Cold first-frame p95: 0.12 s unthrottled, 1.72 s on Fast 3G. |
 | P6 edges + scrubbing | T7 | ✅ placeholder clips | All-intra verified in CI; the real Veo clips come later. |
-| **P7 claim guard** | T8 | ✅ local · ✅ hosted | `/v1/ask` endpoint + QuestionPanel UI complete. Gemini Flash answer generation + refusal detection working. Hosted validation complete (refusal tested with "off_topic" response; play-log signed; signature verified with key_id 064460c0d3bf). |
+| **P7 claim guard** | T8 → **T8.1** | ✅ local (rules path, 10/10 · 0 fabrications) · ⚠️ hosted re-validation needed | `/v1/ask` endpoint + QuestionPanel UI complete. Gemini Flash answer generation + refusal detection working. Hosted validation complete (refusal tested with "off_topic" response; play-log signed; signature verified with key_id 064460c0d3bf). |
 | P7.5 play-log + receipt | T6 | ✅ local | HMAC signing and per-manifest chain; Firestore path written and validated (T2). Questions/refusals now recorded (T8). |
 | P8 accessibility | — | ❌ | High-contrast skin is doable now; captions and audio description need P4 TTS. |
 | P9 adapters, evals, deck | — | ❌ | |
@@ -169,6 +169,6 @@ Detailed runbook: [`docs/HOSTED_VALIDATION_RUNBOOK.md`](docs/HOSTED_VALIDATION_R
 | Paths + gestures | `frontend/src/runtime/path.ts`, `scrub.ts`, `frontend/src/components/RuntimePlayer.tsx` |
 | Degradation, SW, embed | `frontend/src/runtime/tier.ts`, `frontend/public/sw.js`, `frontend/embed.html`, `src/components/EmbedApp.tsx` |
 | Play-log | `frontend/src/runtime/playlog.ts`, `usePlayLog.ts`, `src/components/Receipt.tsx` · `backend/app/services/playlog.py`, `app/routers/playlog.py` |
-| Claim guard | `frontend/src/components/QuestionPanel.tsx` · `backend/app/routers/ask.py` |
+| Claim guard | `backend/app/services/guard.py` (classify → answer → verify → refuse) · `backend/app/routers/ask.py` · `frontend/src/components/QuestionPanel.tsx` · `evals/refusal_set.json`, `evals/run_refusal.py` |
 | Encoding + clips | `backend/app/pipeline/encode.py`, `placeholder_clips.py`, `placeholder_vault.json`, `frontend/public/assets/vault/` |
 | Contract | `backend/manifest_schema/manifest.schema.json`, `linter.py` (INV-01 … INV-18) |

@@ -67,6 +67,22 @@ class Segment(BaseModel):
     bindings: dict[str, ShownBinding] = Field(default_factory=dict)
 
 
+class AskedQuestion(BaseModel):
+    """A question the guard answered (P7): the answer and the facts it cited."""
+    model_config = ConfigDict(extra="forbid")
+    q: str = Field(max_length=500)
+    a: str | None = Field(default=None, max_length=2000)
+    facts_cited: list[str] = Field(default_factory=list, max_length=20)
+
+
+class Refusal(BaseModel):
+    """A question the guard refused (P7), with its §30 type."""
+    model_config = ConfigDict(extra="forbid")
+    q: str = Field(max_length=500)
+    type: str = Field(max_length=40)
+    reason: str = Field(default="", max_length=1000)
+
+
 class PlayRecordIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     manifest_id: str
@@ -76,8 +92,8 @@ class PlayRecordIn(BaseModel):
     ended_at: str
     shown: list[Segment] = Field(min_length=1, max_length=500)
     # Filled by P7 (the claim guard); present now so receipts already count them.
-    questions: list[dict[str, Any]] = Field(default_factory=list, max_length=100)  # {q, a?, facts_cited?}
-    refusals: list[dict[str, Any]] = Field(default_factory=list, max_length=100)  # {q, type, reason}
+    questions: list[AskedQuestion] = Field(default_factory=list, max_length=100)
+    refusals: list[Refusal] = Field(default_factory=list, max_length=100)
 
 
 # ── Canonical form, hashing, signing ─────────────────────────────────────────
@@ -183,6 +199,10 @@ def validate_against_manifest(body: PlayRecordIn, manifest: dict) -> list[str]:
                     errors.append(f"{where}: rung 3 '{key}' value differs from the published fact '{fid}'")
             elif kind != "omitted" or shown.value is not None:
                 errors.append(f"{where}: rung 4 '{key}' must be omitted and carry no value")
+    from app.services.guard import TYPES  # local import: playlog has no other guard dependency
+    for i, refusal in enumerate(body.refusals):
+        if refusal.type not in TYPES:
+            errors.append(f"refusals[{i}]: '{refusal.type}' is not a §30 question type")
     return errors
 
 

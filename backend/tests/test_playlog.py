@@ -197,3 +197,17 @@ def test_configured_key_is_used_and_identified(monkeypatch):
     assert playlog.verify_signature(rec)
     monkeypatch.setattr(settings, "playlog_hmac_key", "a-different-key")
     assert not playlog.verify_signature(rec)   # a record only verifies under the key that signed it
+
+
+def test_questions_and_refusals_are_signed_with_strict_shapes():
+    """T8.1: guard outcomes ride in the signed record; unknown types or fields are refused."""
+    body = play(questions=[{"q": "What's the warranty?", "a": "3-year or 30,000 km battery warranty.",
+                            "facts_cited": ["warranty"]}],
+                refusals=[{"q": "Is it the fastest in India?", "type": "superlative_comparative",
+                           "reason": "I can only tell you what's verified: 0–60 km/h in 8.2 seconds."}])
+    rec = post(body).json()
+    assert rec["refusals"][0]["type"] == "superlative_comparative" and playlog.verify_signature(rec)
+    bad_type = play(refusals=[{"q": "x", "type": "made_up", "reason": ""}])
+    assert post(bad_type).status_code == 422
+    bad_field = play(questions=[{"q": "x", "viewer_email": "a@b.c"}])
+    assert post(bad_field).status_code == 422

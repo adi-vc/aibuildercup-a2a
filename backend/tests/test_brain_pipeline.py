@@ -13,6 +13,7 @@ Exit criteria from vachan-plan.md §64.3:
   4. Gate 1 resumes with operator edits, and edits persist
 """
 
+import asyncio
 import pytest
 from pathlib import Path
 
@@ -20,6 +21,11 @@ from app.services.brain_store import reset_store, get_store
 from app.models.brain import GateGroundPayload, FactEdit
 from app.pipeline.brain_builder import run_brain_build, apply_gate_ground, get_brain_result
 from app.services.verifier import verify_span
+
+
+def build_brain(source_id: str, gcs_path: str):
+    """run_brain_build is async (non-blocking Gemini calls); run it to completion here."""
+    return asyncio.run(run_brain_build(source_id, gcs_path))
 
 FIXTURE_HTML = (
     Path(__file__).parent.parent / "fixtures" / "vega_v1.html"
@@ -40,7 +46,7 @@ def fresh_store():
 # ── Exit criterion 1: ≥ 8 facts extracted ────────────────────────────────────
 
 def test_at_least_eight_facts_extracted():
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     assert run.fact_count >= 8, (
         f"Expected ≥ 8 facts, got {run.fact_count}. "
         "Check STUB_FACTS in brain.py — all 8 §17 facts must be present."
@@ -55,7 +61,7 @@ def test_all_canon_facts_string_verify():
     string-verifies against the raw fixture source.  This is the mechanical
     guarantee — no model involved.
     """
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     store = get_store()
 
     facts = store.get_facts_by_source(FAKE_SOURCE_ID)
@@ -83,7 +89,7 @@ def test_all_canon_facts_string_verify():
 
 
 def test_coverage_is_one_hundred_percent():
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     assert run.coverage == 1.0, (
         f"Expected 100% coverage (all stub quotes are verbatim), got {run.coverage:.2%}"
     )
@@ -124,7 +130,7 @@ def test_invented_claim_demotes_to_inferred():
 
 def test_gate1_edit_persists():
     """An edit applied at gate 1 must be reflected in a subsequent GET /v1/brain."""
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     assert run.status == "awaiting_gate"
 
     store = get_store()
@@ -152,7 +158,7 @@ def test_gate1_edit_persists():
 
 def test_gate1_drop_removes_fact():
     """A fact dropped at gate 1 must be absent from the store afterward."""
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     store = get_store()
     facts = store.get_facts_by_source(FAKE_SOURCE_ID)
     target_id = facts[0]["id"]
@@ -168,7 +174,7 @@ def test_gate1_drop_removes_fact():
 
 def test_gate1_accepts_without_changes():
     """Passing an empty payload to gate 1 (all implicit accepts) must complete cleanly."""
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     payload = GateGroundPayload()  # empty — keep everything
     resumed_run = apply_gate_ground(run.id, payload)
     assert resumed_run.status == "done"
@@ -185,7 +191,7 @@ def test_gate1_edits_persist_across_store_reads():
     shares the same instance within a test, so we just re-fetch the run).
     In production Firestore this naturally survives restarts.
     """
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     store = get_store()
     facts = store.get_facts_by_source(FAKE_SOURCE_ID)
     fact_id = facts[0]["id"]
@@ -208,13 +214,13 @@ def test_gate1_edits_persist_across_store_reads():
 # ── Run status transitions ────────────────────────────────────────────────────
 
 def test_run_transitions_to_awaiting_gate():
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     assert run.status == "awaiting_gate"
     assert run.step == "ground_review"
 
 
 def test_run_transitions_to_done_after_gate():
-    run = run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    run = build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     resumed = apply_gate_ground(run.id, GateGroundPayload())
     assert resumed.status == "done"
 
@@ -225,7 +231,7 @@ def test_brain_api_get_returns_result():
     from fastapi.testclient import TestClient
     from app.main import app
 
-    run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
 
     client = TestClient(app)
     resp = client.get(f"/v1/brain/{FAKE_SOURCE_ID}")
@@ -268,7 +274,7 @@ def test_gate_ground_api_endpoint():
     from app.main import app
 
     # Build first
-    run_brain_build(FAKE_SOURCE_ID, FAKE_GCS_PATH)
+    build_brain(FAKE_SOURCE_ID, FAKE_GCS_PATH)
     store = get_store()
     runs = store.get_runs_by_source(FAKE_SOURCE_ID)
     run_id = runs[0]["id"]

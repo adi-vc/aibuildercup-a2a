@@ -8,7 +8,7 @@
  */
 
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePlayLog } from '../runtime/usePlayLog';
 import type { SignedPlayRecord } from '../runtime/playlog';
 import { profileHash } from '../runtime/playlog';
@@ -74,10 +74,12 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const [currentProfileHash, setCurrentProfileHash] = useState<string>('');
 
-  // Compute profile hash for the QuestionPanel
-  useState(() => {
-    profileHash(profile).then(setCurrentProfileHash, () => undefined);
-  });
+  // The guard gets the current (coarse, PII-free) profile hash; recompute on a locale/city swap.
+  useEffect(() => {
+    let cancelled = false;
+    profileHash(profile).then((h) => !cancelled && setCurrentProfileHash(h), () => undefined);
+    return () => { cancelled = true; };
+  }, [profile]);
 
   const endPlay = async () => {
     setReceiptError(null);
@@ -89,12 +91,10 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
   };
 
   const handleQuestionAsked = (question: string, response: AskResponse) => {
-    if (!playLog.recorder) return;
-    
     if (response.type === 'answered') {
-      playLog.recorder.recordQuestion(question, response.answer, response.facts_cited);
+      playLog.recordQuestion(question, response.answer, response.facts_cited);
     } else {
-      playLog.recorder.recordRefusal(question, response.type, response.reason);
+      playLog.recordRefusal(question, response.refusal_type, response.reason);
     }
   };
 
@@ -157,6 +157,7 @@ export function BeatPlayer({ manifest, version, profile, onProfileChange }: Prop
       <QuestionPanel
         manifestId={manifest.manifest_id}
         locale={profile.locale}
+        city={profile.city}
         profileHash={currentProfileHash}
         apiBaseUrl={import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}
         onQuestionAsked={handleQuestionAsked}

@@ -295,3 +295,16 @@
     width: calc(100vw - 20px);
   }
 }
+
+/* The verified span behind an answer, or the fact offered instead of a refusal. */
+.sourceQuote {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  color: #a5d6a7;
+}
+
+.sourceQuote small {
+  font-style: normal;
+  color: #888;
+}

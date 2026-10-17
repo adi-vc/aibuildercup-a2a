@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Keeping them in Settings means tests can swap them without touching the file.
     extraction_model: str = "gemini-3.8-flash"
     planning_model: str = "gemini-3.8-flash"
+    # The claim guard (§32.1 #10): Flash, temperature 0, structured output. Its
+    # answers are verified mechanically (services/guard.py), so it is never the guarantee.
+    guard_model: str = "gemini-3.8-flash"
 
     # ── Firestore ────────────────────────────────────────────────────────────────
     # Set FIRESTORE_EMULATOR_HOST to use the local emulator (e.g. localhost:8088).

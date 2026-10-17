@@ -63,5 +63,13 @@ export function usePlayLog(
     return submitPlay(record);
   }, [observe]);
 
-  return { onBeatChange: setBeatId, submit, recorder: recorderRef.current };
+  // Guard outcomes ride in the current play (P7). Stable callbacks, so no ref is read during render.
+  const recordQuestion = useCallback((q: string, a?: string, factsCited?: string[]) => {
+    recorderRef.current?.recordQuestion(q, a, factsCited);
+  }, []);
+  const recordRefusal = useCallback((q: string, type: string, reason: string) => {
+    recorderRef.current?.recordRefusal(q, type, reason);
+  }, []);
+
+  return { onBeatChange: setBeatId, submit, recordQuestion, recordRefusal };
 }

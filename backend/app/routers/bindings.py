@@ -33,6 +33,14 @@ class ResolveRequest(BaseModel):
     sku: str = "vega_v1"
 
 
+def resolve_live(key: str, city: str) -> dict | None:
+    """One binding value for the guard's volatile answers (§30 #8); None when the resolver is down."""
+    if settings.bindings_fail:
+        return None
+    value = _resolve(key, city)
+    return {**value, "resolved_at": datetime.now(timezone.utc).isoformat()} if value else None
+
+
 def _resolve(key: str, city: str) -> dict | None:
     if RESOLVER_FOR_KEY.get(key) == "offer.by_city":
         amount = settings.live_offer_feed.get(city.lower())
