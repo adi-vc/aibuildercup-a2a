@@ -1,0 +1,534 @@
+{
+  "manifest_id": "m_src_demo_standard",
+  "schema_version": "1.0",
+  "brain_version": "run_stub_demo",
+  "bitgraph_version": "bg_tub_demo",
+  "locales": [
+    "en-IN",
+    "hi-IN"
+  ],
+  "beats": [
+    {
+      "id": "b_hook",
+      "kind": "hold",
+      "mood": true,
+      "fact_ids": [],
+      "vault_refs": [
+        "plate_hook"
+      ],
+      "text_slots": {
+        "en-IN": "Built for the road ahead.",
+        "hi-IN": "\u0906\u0917\u0947 \u0915\u0940 \u0930\u093e\u0939 \u0915\u0947 \u0932\u093f\u090f \u092c\u0928\u0940\u0964"
+      },
+      "audio_slots": {},
+      "bindings": [],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": []
+    },
+    {
+      "id": "b_flood",
+      "kind": "hold",
+      "mood": false,
+      "fact_ids": [
+        "f_wading_depth"
+      ],
+      "vault_refs": [
+        "plate_flood"
+      ],
+      "text_slots": {
+        "en-IN": "30 cm of water. Still going.",
+        "hi-IN": "30 \u0938\u0947\u092e\u0940 \u092a\u093e\u0928\u0940\u0964 \u092b\u093f\u0930 \u092d\u0940 \u091a\u0932\u0924\u0940 \u0930\u0939\u0940\u0964"
+      },
+      "audio_slots": {},
+      "bindings": [],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": [
+        "e_flood_spec"
+      ]
+    },
+    {
+      "id": "b_range",
+      "kind": "hold",
+      "mood": false,
+      "fact_ids": [
+        "f_range"
+      ],
+      "vault_refs": [
+        "plate_range"
+      ],
+      "text_slots": {
+        "en-IN": "128 km on a charge.",
+        "hi-IN": "\u090f\u0915 \u091a\u093e\u0930\u094d\u091c \u092e\u0947\u0902 128 \u0915\u093f\u092e\u0940\u0964"
+      },
+      "audio_slots": {},
+      "bindings": [],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": [
+        "e_range_offer"
+      ]
+    },
+    {
+      "id": "b_performance",
+      "kind": "hold",
+      "mood": false,
+      "fact_ids": [
+        "f_zero_sixty"
+      ],
+      "vault_refs": [
+        "plate_performance"
+      ],
+      "text_slots": {
+        "en-IN": "0 to 60 in 8.2 seconds.",
+        "hi-IN": "8.2 \u0938\u0947\u0915\u0902\u0921 \u092e\u0947\u0902 0 \u0938\u0947 60\u0964"
+      },
+      "audio_slots": {},
+      "bindings": [],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": []
+    },
+    {
+      "id": "b_charge",
+      "kind": "hold",
+      "mood": false,
+      "fact_ids": [
+        "f_charge_time"
+      ],
+      "vault_refs": [
+        "plate_charge"
+      ],
+      "text_slots": {
+        "en-IN": "0 to 80% in 4 hours 30 minutes.",
+        "hi-IN": "4 \u0918\u0902\u091f\u0947 30 \u092e\u093f\u0928\u091f \u092e\u0947\u0902 0 \u0938\u0947 80%\u0964"
+      },
+      "audio_slots": {},
+      "bindings": [],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": []
+    },
+    {
+      "id": "b_clearance",
+      "kind": "hold",
+      "mood": false,
+      "fact_ids": [
+        "f_ground_clearance"
+      ],
+      "vault_refs": [
+        "plate_clearance"
+      ],
+      "text_slots": {
+        "en-IN": "165 mm of ground clearance.",
+        "hi-IN": "165 \u092e\u093f\u092e\u0940 \u0917\u094d\u0930\u093e\u0909\u0902\u0921 \u0915\u094d\u0932\u093f\u092f\u0930\u0947\u0902\u0938\u0964"
+      },
+      "audio_slots": {},
+      "bindings": [],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": []
+    },
+    {
+      "id": "b_offer",
+      "kind": "hold",
+      "mood": false,
+      "fact_ids": [
+        "offer_price_mumbai",
+        "offer_price_bengaluru"
+      ],
+      "vault_refs": [
+        "plate_offer"
+      ],
+      "text_slots": {
+        "en-IN": "On-road in your city:",
+        "hi-IN": "\u0906\u092a\u0915\u0947 \u0936\u0939\u0930 \u092e\u0947\u0902:"
+      },
+      "audio_slots": {},
+      "bindings": [
+        "price"
+      ],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": []
+    },
+    {
+      "id": "b_warranty",
+      "kind": "hold",
+      "mood": false,
+      "fact_ids": [
+        "warranty"
+      ],
+      "vault_refs": [
+        "plate_warranty"
+      ],
+      "text_slots": {
+        "en-IN": "3 years or 30,000 km battery warranty.",
+        "hi-IN": "3 \u0938\u093e\u0932 \u092f\u093e 30,000 \u0915\u093f\u092e\u0940 \u092c\u0948\u091f\u0930\u0940 \u0935\u093e\u0930\u0902\u091f\u0940\u0964"
+      },
+      "audio_slots": {},
+      "bindings": [],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": []
+    },
+    {
+      "id": "b_spec_overlay",
+      "kind": "hold",
+      "mood": false,
+      "branch_only": true,
+      "fact_ids": [
+        "f_wading_depth",
+        "f_ground_clearance",
+        "f_charge_time"
+      ],
+      "vault_refs": [
+        "plate_spec_overlay"
+      ],
+      "text_slots": {
+        "en-IN": "From the spec sheet.",
+        "hi-IN": "\u0938\u094d\u092a\u0947\u0915 \u0936\u0940\u091f \u0938\u0947\u0964"
+      },
+      "audio_slots": {},
+      "bindings": [],
+      "hinge": {
+        "in": "wide_neutral",
+        "out": "wide_neutral"
+      },
+      "edges": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_flood_spec",
+      "from": "b_flood",
+      "to": "b_spec_overlay",
+      "clip": "clip_e_flood_spec",
+      "trigger": "auto",
+      "reversible": true,
+      "duration_s": 3.0,
+      "label": "Show me the spec sheet"
+    },
+    {
+      "id": "e_range_offer",
+      "from": "b_range",
+      "to": "b_offer",
+      "clip": "clip_e_range_offer",
+      "trigger": "auto",
+      "reversible": false,
+      "duration_s": 2.5,
+      "label": "See the price in your city"
+    }
+  ],
+  "slots": [
+    {
+      "id": "slot_offer",
+      "beat_id": "b_offer",
+      "kind": "shoppable",
+      "policy": {
+        "kids_mode": false,
+        "categories_allowed": [
+          "auto"
+        ],
+        "competitor_exclusions": [
+          "brand_x"
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "key": "price",
+      "resolver": "offer.by_city",
+      "ttl_s": 300
+    }
+  ],
+  "accessibility": {
+    "captions": true,
+    "audio_description": true
+  },
+  "policy": {
+    "kids_mode": false,
+    "competitor_exclusions": [
+      "brand_x"
+    ]
+  },
+  "vault": {
+    "plate_hook": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_hook.webp",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_hook.webp",
+      "depth_uri": "/assets/placeholder_flood_street_depth.svg",
+      "fact_ids": [],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "plate_flood": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_flood.webp",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_flood.webp",
+      "depth_uri": "/assets/placeholder_flood_street_depth.svg",
+      "fact_ids": [
+        "f_wading_depth"
+      ],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "plate_range": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_range.webp",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_range.webp",
+      "depth_uri": "/assets/placeholder_flood_street_depth.svg",
+      "fact_ids": [
+        "f_range"
+      ],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "plate_performance": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_performance.webp",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_performance.webp",
+      "depth_uri": "/assets/placeholder_flood_street_depth.svg",
+      "fact_ids": [
+        "f_zero_sixty"
+      ],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "plate_charge": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_charge.webp",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_charge.webp",
+      "depth_uri": "/assets/placeholder_flood_street_depth.svg",
+      "fact_ids": [
+        "f_charge_time"
+      ],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "plate_clearance": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_clearance.webp",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_clearance.webp",
+      "depth_uri": "/assets/placeholder_flood_street_depth.svg",
+      "fact_ids": [
+        "f_ground_clearance"
+      ],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "plate_offer": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_offer.png",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_offer.png",
+      "depth_uri": "",
+      "fact_ids": [
+        "offer_price_mumbai",
+        "offer_price_bengaluru"
+      ],
+      "model": "derived-last-frame",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "plate_warranty": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_warranty.webp",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_warranty.webp",
+      "depth_uri": "/assets/placeholder_flood_street_depth.svg",
+      "fact_ids": [
+        "warranty"
+      ],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "plate_spec_overlay": {
+      "kind": "plate",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_spec_overlay.png",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_spec_overlay.png",
+      "depth_uri": "",
+      "fact_ids": [
+        "f_wading_depth",
+        "f_ground_clearance",
+        "f_charge_time"
+      ],
+      "model": "derived-last-frame",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "clip_e_flood_spec": {
+      "kind": "clip",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/clips/clip_e_flood_spec.mp4",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_flood.webp",
+      "depth_uri": "",
+      "fact_ids": [],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    },
+    "clip_e_range_offer": {
+      "kind": "clip",
+      "uri": "https://storage.googleapis.com/vachan_bucket/vault/clips/clip_e_range_offer.mp4",
+      "poster_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_range.webp",
+      "depth_uri": "",
+      "fact_ids": [],
+      "model": "curated-vega-v1",
+      "seed": 0,
+      "bible_version": "vega-v1"
+    }
+  },
+  "integrity": {
+    "fact_index": {
+      "f_charge_time": "sp_stub_004",
+      "f_ground_clearance": "sp_stub_005",
+      "f_range": "sp_stub_002",
+      "f_wading_depth": "sp_stub_001",
+      "f_zero_sixty": "sp_stub_003",
+      "offer_price_bengaluru": "sp_stub_007",
+      "offer_price_mumbai": "sp_stub_006",
+      "warranty": "sp_stub_008"
+    },
+    "facts": {
+      "f_charge_time": {
+        "value": "4h30m",
+        "unit": "",
+        "text": "0\u201380% charge in 4 hours 30 minutes",
+        "quote": "0\u201380% in 4 hours 30 minutes",
+        "origin": "canon"
+      },
+      "f_ground_clearance": {
+        "value": "165",
+        "unit": "mm",
+        "text": "Ground clearance of 165 mm",
+        "quote": "ground clearance of 165 mm",
+        "origin": "canon"
+      },
+      "f_range": {
+        "value": "128",
+        "unit": "km",
+        "text": "Certified range of 128 km per charge (IDC)",
+        "quote": "certified range of 128 km per charge (IDC)",
+        "origin": "canon"
+      },
+      "f_wading_depth": {
+        "value": "30",
+        "unit": "cm",
+        "text": "Wades through water up to 30 cm deep",
+        "quote": "wades through water up to 30 cm deep",
+        "origin": "canon"
+      },
+      "f_zero_sixty": {
+        "value": "8.2",
+        "unit": "s",
+        "text": "0\u201360 km/h in 8.2 seconds",
+        "quote": "0\u201360 km/h in 8.2 seconds",
+        "origin": "canon"
+      },
+      "offer_price_bengaluru": {
+        "value": "127400",
+        "unit": "INR",
+        "text": "Bengaluru on-road price \u20b91,27,400",
+        "quote": "Bengaluru on-road \u20b91,27,400",
+        "origin": "canon"
+      },
+      "offer_price_mumbai": {
+        "value": "129900",
+        "unit": "INR",
+        "text": "Mumbai on-road price \u20b91,29,900",
+        "quote": "Mumbai on-road \u20b91,29,900",
+        "origin": "canon"
+      },
+      "warranty": {
+        "value": "3yr/30000km",
+        "unit": "",
+        "text": "3-year or 30,000 km battery warranty",
+        "quote": "3-year or 30,000 km battery warranty",
+        "origin": "canon"
+      }
+    },
+    "beat_index": {
+      "f_charge_time": [
+        "b_charge",
+        "b_spec_overlay"
+      ],
+      "f_ground_clearance": [
+        "b_clearance",
+        "b_spec_overlay"
+      ],
+      "f_range": [
+        "b_range"
+      ],
+      "f_wading_depth": [
+        "b_flood",
+        "b_spec_overlay"
+      ],
+      "f_zero_sixty": [
+        "b_performance"
+      ],
+      "offer_price_bengaluru": [
+        "b_offer"
+      ],
+      "offer_price_mumbai": [
+        "b_offer"
+      ],
+      "warranty": [
+        "b_warranty"
+      ]
+    },
+    "asset_index": {
+      "f_charge_time": [
+        "plate_charge",
+        "plate_spec_overlay"
+      ],
+      "f_ground_clearance": [
+        "plate_clearance",
+        "plate_spec_overlay"
+      ],
+      "f_range": [
+        "plate_range"
+      ],
+      "f_wading_depth": [
+        "plate_flood",
+        "plate_spec_overlay"
+      ],
+      "f_zero_sixty": [
+        "plate_performance"
+      ],
+      "offer_price_bengaluru": [
+        "plate_offer"
+      ],
+      "offer_price_mumbai": [
+        "plate_offer"
+      ],
+      "warranty": [
+        "plate_warranty"
+      ]
+    },
+    "coverage": 1.0,
+    "linted_at": "2026-10-18T13:20:02.701673+00:00"
+  }
+}

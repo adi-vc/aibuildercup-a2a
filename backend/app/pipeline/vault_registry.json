@@ -1,6 +1,201 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-10-11T00:00:00Z",
-  "assets": {},
-  "_note": "This registry will be populated as assets are curated and uploaded. Each asset entry contains: asset_id, asset_type, content_hash, gcs_uri, cdn_uri, metadata."
+  "generated_at": "2026-10-18T09:03:47.215953Z",
+  "assets": {
+    "plate_b_hook": {
+      "asset_id": "plate_b_hook",
+      "asset_type": "plates",
+      "content_hash": "bc478ae982fbedc5",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_hook.webp",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_hook.webp",
+      "local_path": "/Users/adityavc/Projects/aibuildercup-a2a/backend/app/pipeline/vault_staging/plates/plate_b_hook.webp",
+      "file_size_bytes": 87474,
+      "uploaded_at": "2026-10-18T09:03:18.420224Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "curated"
+        ],
+        "source": "manual_curation"
+      }
+    },
+    "plate_b_flood": {
+      "asset_id": "plate_b_flood",
+      "asset_type": "plates",
+      "content_hash": "856d0407413cbf28",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_flood.webp",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_flood.webp",
+      "local_path": "/Users/adityavc/Projects/aibuildercup-a2a/backend/app/pipeline/vault_staging/plates/plate_b_flood.webp",
+      "file_size_bytes": 112648,
+      "uploaded_at": "2026-10-18T09:03:18.421431Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "curated"
+        ],
+        "source": "manual_curation"
+      }
+    },
+    "plate_b_range": {
+      "asset_id": "plate_b_range",
+      "asset_type": "plates",
+      "content_hash": "04018f586049fc84",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_range.webp",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_range.webp",
+      "local_path": "/Users/adityavc/Projects/aibuildercup-a2a/backend/app/pipeline/vault_staging/plates/plate_b_range.webp",
+      "file_size_bytes": 56488,
+      "uploaded_at": "2026-10-18T09:03:18.422155Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "curated"
+        ],
+        "source": "manual_curation"
+      }
+    },
+    "plate_b_performance": {
+      "asset_id": "plate_b_performance",
+      "asset_type": "plates",
+      "content_hash": "e9fecb9b988f1236",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_performance.webp",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_performance.webp",
+      "local_path": "/Users/adityavc/Projects/aibuildercup-a2a/backend/app/pipeline/vault_staging/plates/plate_b_performance.webp",
+      "file_size_bytes": 81086,
+      "uploaded_at": "2026-10-18T09:03:18.422994Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "curated"
+        ],
+        "source": "manual_curation"
+      }
+    },
+    "plate_b_charge": {
+      "asset_id": "plate_b_charge",
+      "asset_type": "plates",
+      "content_hash": "a0cae58b5f4bb24f",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_charge.webp",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_charge.webp",
+      "local_path": "/Users/adityavc/Projects/aibuildercup-a2a/backend/app/pipeline/vault_staging/plates/plate_b_charge.webp",
+      "file_size_bytes": 79974,
+      "uploaded_at": "2026-10-18T09:03:18.423750Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "curated"
+        ],
+        "source": "manual_curation"
+      }
+    },
+    "plate_b_clearance": {
+      "asset_id": "plate_b_clearance",
+      "asset_type": "plates",
+      "content_hash": "0270cac10c471440",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_clearance.webp",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_clearance.webp",
+      "local_path": "/Users/adityavc/Projects/aibuildercup-a2a/backend/app/pipeline/vault_staging/plates/plate_b_clearance.webp",
+      "file_size_bytes": 98486,
+      "uploaded_at": "2026-10-18T09:03:18.424528Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "curated"
+        ],
+        "source": "manual_curation"
+      }
+    },
+    "plate_b_warranty": {
+      "asset_id": "plate_b_warranty",
+      "asset_type": "plates",
+      "content_hash": "f5c35194bb7e87f0",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_warranty.webp",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_warranty.webp",
+      "local_path": "/Users/adityavc/Projects/aibuildercup-a2a/backend/app/pipeline/vault_staging/plates/plate_b_warranty.webp",
+      "file_size_bytes": 68934,
+      "uploaded_at": "2026-10-18T09:03:18.425239Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "curated"
+        ],
+        "source": "manual_curation"
+      }
+    },
+    "plate_b_spec_overlay": {
+      "asset_id": "plate_b_spec_overlay",
+      "asset_type": "plates",
+      "content_hash": "7c425cc8d55c77b4",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_spec_overlay.png",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_spec_overlay.png",
+      "local_path": "app/pipeline/vault_processed/plates/plate_b_spec_overlay.png",
+      "file_size_bytes": 513965,
+      "uploaded_at": "2026-10-18T09:03:47.203184Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "derived"
+        ],
+        "source": "clip_last_frame:clip_e_flood_spec"
+      }
+    },
+    "plate_b_offer": {
+      "asset_id": "plate_b_offer",
+      "asset_type": "plates",
+      "content_hash": "1f76b2e8a32f9f8d",
+      "gcs_uri": "gs://vachan_bucket/vault/plates/plate_b_offer.png",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/plates/plate_b_offer.png",
+      "local_path": "app/pipeline/vault_processed/plates/plate_b_offer.png",
+      "file_size_bytes": 515769,
+      "uploaded_at": "2026-10-18T09:03:47.205092Z",
+      "metadata": {
+        "tags": [
+          "vega_v1",
+          "derived"
+        ],
+        "source": "clip_last_frame:clip_e_range_offer"
+      }
+    },
+    "clip_e_flood_spec": {
+      "asset_id": "clip_e_flood_spec",
+      "asset_type": "clips",
+      "content_hash": "dd85ed17ce717749",
+      "gcs_uri": "gs://vachan_bucket/vault/clips/clip_e_flood_spec.mp4",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/clips/clip_e_flood_spec.mp4",
+      "local_path": "app/pipeline/vault_processed/clips/clip_e_flood_spec_intra.mp4",
+      "file_size_bytes": 2004072,
+      "uploaded_at": "2026-10-18T09:03:47.210876Z",
+      "metadata": {
+        "duration_s": 3.0,
+        "fps": 30,
+        "frames": 90,
+        "from_plate": "plate_b_flood",
+        "derived_plate": "plate_b_spec_overlay",
+        "tags": [
+          "vega_v1",
+          "all_intra"
+        ]
+      }
+    },
+    "clip_e_range_offer": {
+      "asset_id": "clip_e_range_offer",
+      "asset_type": "clips",
+      "content_hash": "156d0327ab22d6a3",
+      "gcs_uri": "gs://vachan_bucket/vault/clips/clip_e_range_offer.mp4",
+      "cdn_uri": "https://storage.googleapis.com/vachan_bucket/vault/clips/clip_e_range_offer.mp4",
+      "local_path": "app/pipeline/vault_processed/clips/clip_e_range_offer_intra.mp4",
+      "file_size_bytes": 1755612,
+      "uploaded_at": "2026-10-18T09:03:47.215909Z",
+      "metadata": {
+        "duration_s": 2.5,
+        "fps": 30,
+        "frames": 75,
+        "from_plate": "plate_b_range",
+        "derived_plate": "plate_b_offer",
+        "tags": [
+          "vega_v1",
+          "all_intra"
+        ]
+      }
+    }
+  }
 }

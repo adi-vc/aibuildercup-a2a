@@ -52,7 +52,7 @@ app = FastAPI(
 # ── Startup: Auto-load P0 fixture ────────────────────────────────────────────
 @app.on_event("startup")
 async def load_p0_fixture():
-    """Auto-load the P0 fixture on startup so the ask endpoint works immediately."""
+    """Auto-load the P0 fixture and demo manifest on startup so the ask endpoint works immediately."""
     import json
     from pathlib import Path
     from app.services.brain_store import get_store
@@ -61,7 +61,7 @@ async def load_p0_fixture():
     try:
         store = get_store()
         
-        # Load manifest - try multiple possible paths
+        # Load P0 manifest - try multiple possible paths
         possible_paths = [
             Path("fixtures/p0_single_beat.json"),  # from backend/ directory
             Path(__file__).parent.parent / "fixtures" / "p0_single_beat.json",  # relative to app/
@@ -93,13 +93,32 @@ async def load_p0_fixture():
             updated_fact = fact.model_copy(update={"source_id": source_id})
             store.save_fact(updated_fact)
         
-        # Save manifest
+        # Save P0 manifest
         store.save_manifest(manifest)
         
         logging.info(f"✅ Auto-loaded P0 fixture: manifest_id={manifest['manifest_id']}, source_id={source_id}, {len(STUB_FACTS)} facts")
         
+        # Load demo manifest
+        demo_paths = [
+            Path("fixtures/demo_vega_v1.json"),
+            Path(__file__).parent.parent / "fixtures" / "demo_vega_v1.json",
+            Path("backend/fixtures/demo_vega_v1.json"),
+        ]
+        
+        demo_manifest = None
+        for demo_path in demo_paths:
+            if demo_path.exists():
+                with open(demo_path) as f:
+                    demo_manifest = json.load(f)
+                break
+        
+        if demo_manifest:
+            # Save demo manifest
+            store.save_manifest(demo_manifest)
+            logging.info(f"✅ Auto-loaded demo manifest: manifest_id={demo_manifest['manifest_id']}, beats={len(demo_manifest.get('beats', []))}, vault_assets={len(demo_manifest.get('vault', {}))}")
+        
     except Exception as e:
-        logging.warning(f"⚠️  Could not auto-load P0 fixture: {e}")
+        logging.warning(f"⚠️  Could not auto-load fixtures: {e}")
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 # Allow the Vite dev server and Firebase Hosting to call the API.

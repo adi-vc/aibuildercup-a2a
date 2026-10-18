@@ -17,7 +17,7 @@ import { useChapters } from './runtime/useChapters';
 import './App.css';
 
 const urlParams = new URLSearchParams(window.location.search);
-const MANIFEST_ID = urlParams.get('manifest') ?? 'p0_single_beat';
+const MANIFEST_ID = urlParams.get('manifest') ?? 'm_src_demo_standard';
 const SHOW_VARIANTS = urlParams.get('variants') === '1';
 
 export default function App() {

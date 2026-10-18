@@ -37,6 +37,10 @@ app/pipeline/vault_staging/audio/**/*.wav
 app/pipeline/vault_staging/patches/*.svg
 app/pipeline/vault_staging/patches/*.png
 app/pipeline/vault_staging/clips/*.mp4
+app/pipeline/vault_staging/identity/*.png
+
+# Vault processed
+app/pipeline/vault_processed/
 
 # Keep directory structure but not the assets
 !app/pipeline/vault_staging/.gitkeep
